@@ -8,4 +8,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\laba2.Core\laba2.Core.csproj" />
+  </ItemGroup>
+
 </Project>

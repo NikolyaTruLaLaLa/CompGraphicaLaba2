@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="laba2.Core/laba2.Core.csproj" />
   <Project Path="laba2/laba2.csproj" />
 </Solution>

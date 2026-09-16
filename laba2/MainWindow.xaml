@@ -3,10 +3,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ctrl="clr-namespace:laba2.Controls"
         xmlns:local="clr-namespace:laba2"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="MainWindow" Height="650" Width="800">
 
-    </Grid>
+    <StackPanel>
+        <ctrl:HistogramControl Data="{Binding GrayHistogram}" Height="200"/>
+        <ctrl:HistogramControl Data="{Binding GrayHistogram2}" Height="200"/>
+        <ctrl:HistogramControl Data="{Binding GrayHistogram3}" Height="200"/>
+    </StackPanel>
 </Window>
