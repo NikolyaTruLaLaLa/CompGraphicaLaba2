@@ -3,14 +3,143 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:ctrl="clr-namespace:laba2.Controls"
-        xmlns:local="clr-namespace:laba2"
         mc:Ignorable="d"
-        Title="MainWindow" Height="650" Width="800">
+        Title="Лаба 2: Компьютерная графика" Height="800" Width="1100">
 
-    <StackPanel>
-        <ctrl:HistogramControl Data="{Binding GrayHistogram}" Height="200"/>
-        <ctrl:HistogramControl Data="{Binding GrayHistogram2}" Height="200"/>
-        <ctrl:HistogramControl Data="{Binding GrayHistogram3}" Height="200"/>
-    </StackPanel>
+    <!-- Используем TabControl как навбар -->
+    <TabControl Margin="10" Background="White">
+
+        <!-- ВКЛАДКА 1: Заглушка -->
+        <TabItem Header="Задание 1">
+            <Grid Background="#F9F9F9">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="🚧" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="Задание 1 находится в разработке" FontSize="20" Foreground="Gray" FontWeight="Bold"/>
+                    <TextBlock Text="Здесь будет реализован следующий алгоритм" FontSize="14" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Grid>
+        </TabItem>
+
+        <!-- ВКЛАДКА 2: Задание 2 -->
+        <TabItem Header="Задание 2. Каналы RGB">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- Кнопка загрузки -->
+                <Button Grid.Row="0" Content="Загрузить изображение" Command="{Binding LoadImageCommand}" 
+                        Width="200" Height="40" HorizontalAlignment="Left" Margin="0,0,0,15" FontSize="14"/>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ЛЕВАЯ ЧАСТЬ: ИЗОБРАЖЕНИЯ -->
+                    <ScrollViewer Grid.Column="0" VerticalScrollBarVisibility="Auto" Margin="0,0,20,0">
+                        <StackPanel>
+                            <TextBlock Text="Оригинал" FontWeight="Bold" Margin="0,0,0,5"/>
+                            <Image Source="{Binding OriginalImage}" Height="300" Stretch="Uniform" HorizontalAlignment="Left"/>
+
+                            <UniformGrid Columns="3" Margin="0,15,0,0">
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="Red Channel" HorizontalAlignment="Center" FontWeight="Bold" Foreground="Red"/>
+                                    <Image Source="{Binding RedChannelImage}" Height="150" Stretch="Uniform"/>
+                                </StackPanel>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="Green Channel" HorizontalAlignment="Center" FontWeight="Bold" Foreground="Green"/>
+                                    <Image Source="{Binding GreenChannelImage}" Height="150" Stretch="Uniform"/>
+                                </StackPanel>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="Blue Channel" HorizontalAlignment="Center" FontWeight="Bold" Foreground="Blue"/>
+                                    <Image Source="{Binding BlueChannelImage}" Height="150" Stretch="Uniform"/>
+                                </StackPanel>
+                            </UniformGrid>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- ПРАВАЯ ЧАСТЬ: ГИСТОГРАММЫ -->
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+
+                            <!-- Гистограмма Красного канала -->
+                            <StackPanel Margin="0,0,0,25">
+                                <TextBlock Text="Red Channel Histogram" FontWeight="Bold" FontSize="14" Foreground="Red"/>
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Height="160" Margin="0,5,0,0">
+                                    <ItemsControl ItemsSource="{Binding RedBins}" Height="150" VerticalAlignment="Bottom">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="20" Height="{Binding Height}" Fill="Red" VerticalAlignment="Bottom" Margin="1,0" ToolTip="{Binding ToolTip}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Гистограмма Зеленого канала -->
+                            <StackPanel Margin="0,0,0,25">
+                                <TextBlock Text="Green Channel Histogram" FontWeight="Bold" FontSize="14" Foreground="Green"/>
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Height="160" Margin="0,5,0,0">
+                                    <ItemsControl ItemsSource="{Binding GreenBins}" Height="150" VerticalAlignment="Bottom">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="20" Height="{Binding Height}" Fill="Green" VerticalAlignment="Bottom" Margin="1,0" ToolTip="{Binding ToolTip}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Гистограмма Синего канала -->
+                            <StackPanel Margin="0,0,0,25">
+                                <TextBlock Text="Blue Channel Histogram" FontWeight="Bold" FontSize="14" Foreground="Blue"/>
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1" Height="160" Margin="0,5,0,0">
+                                    <ItemsControl ItemsSource="{Binding BlueBins}" Height="150" VerticalAlignment="Bottom">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <UniformGrid Rows="1"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Rectangle Width="20" Height="{Binding Height}" Fill="Blue" VerticalAlignment="Bottom" Margin="1,0" ToolTip="{Binding ToolTip}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </Border>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Grid>
+        </TabItem>
+
+        
+
+        <!-- ВКЛАДКА 3: Заглушка -->
+        <TabItem Header="Задание 3">
+            <Grid Background="#F9F9F9">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="🚧" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
+                    <TextBlock Text="Задание 3 находится в разработке" FontSize="20" Foreground="Gray" FontWeight="Bold"/>
+                    <TextBlock Text="Здесь будет реализован следующий алгоритм" FontSize="14" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5,0,0"/>
+                </StackPanel>
+            </Grid>
+        </TabItem>
+
+    </TabControl>
 </Window>
