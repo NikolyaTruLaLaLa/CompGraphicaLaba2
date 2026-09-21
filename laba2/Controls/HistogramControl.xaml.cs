@@ -1,4 +1,6 @@
-﻿using System.Windows;
+﻿using System;
+using System.Linq;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using laba2.Core.Histogram;
@@ -20,7 +22,21 @@ namespace laba2.Controls
             set => SetValue(DataProperty, value);
         }
 
+        public static readonly DependencyProperty BarBrushProperty =
+            DependencyProperty.Register(
+                nameof(BarBrush), typeof(Brush), typeof(HistogramControl),
+                new PropertyMetadata(null, onBarBrushChanged));
+
+        public Brush BarBrush
+        {
+            get => (Brush)GetValue(BarBrushProperty);
+            set => SetValue(BarBrushProperty, value);
+        }
+
         private static void onDataChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+            => ((HistogramControl)d).Redraw();
+
+        private static void onBarBrushChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
             => ((HistogramControl)d).Redraw();
 
         public HistogramControl()
@@ -41,9 +57,9 @@ namespace laba2.Controls
             double h = PlotCanvas.ActualHeight;
             if (w <= 1 || h <= 1) return;
 
-            double leftPad = 44;    // место под числа оси Oy
-            double topPad = 24;     // место под заголовок
-            double bottomPad = deltaForSign; // место под подписи оси Ox
+            double leftPad = 44;
+            double topPad = 24;
+            double bottomPad = deltaForSign;
 
             double plotW = w - leftPad;
             double plotH = h - topPad - bottomPad;
@@ -55,7 +71,8 @@ namespace laba2.Controls
             int maxCount = data.MaxData;
             if (maxCount == 0) return;
 
-            double axisY = topPad + plotH;  
+            var barBrush = BarBrush ?? Brushes.SteelBlue;
+            double axisY = topPad + plotH;
 
             for (int i = 0; i < n; ++i)
             {
@@ -64,7 +81,7 @@ namespace laba2.Controls
                 {
                     Width = Math.Max(1, binW - 1),
                     Height = Math.Max(0, barH),
-                    Fill = Brushes.SteelBlue
+                    Fill = barBrush
                 };
                 Canvas.SetLeft(rect, leftPad + i * binW);
                 Canvas.SetTop(rect, axisY - barH);
@@ -158,6 +175,5 @@ namespace laba2.Controls
             Canvas.SetTop(title, 2);
             PlotCanvas.Children.Add(title);
         }
-
     }
 }
