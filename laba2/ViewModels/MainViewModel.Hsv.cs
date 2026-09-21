@@ -45,17 +45,31 @@ namespace laba2.ViewModels
             ApplyHsv();
         }
 
+        /// <summary>Собирает текущий сдвиг H/S/V из значений слайдеров.</summary>
+        private HsvAdjustment BuildAdjustment() => new HsvAdjustment
+        {
+            HueShift = HueShift,
+            SaturationShift = SaturationShift,
+            ValueShift = ValueShift
+        };
+
+        /// <summary>
+        /// Возвращает BGRA-массив с применённым текущим HSV-сдвигом.
+        /// Единственная точка применения сдвига — используется и превью, и сохранением.
+        /// </summary>
+        private byte[] GetAdjustedBgra()
+        {
+            if (Session == null)
+                throw new InvalidOperationException("Изображение не загружено.");
+
+            return HsvImageProcessor.Adjust(Session.Bgra, BuildAdjustment());
+        }
+
         private void ApplyHsv()
         {
             if (Session == null) return;
 
-            var adj = new HsvAdjustment
-            {
-                HueShift = HueShift,
-                SaturationShift = SaturationShift,
-                ValueShift = ValueShift
-            };
-            var adjusted = HsvImageProcessor.Adjust(Session.Bgra, adj);
+            var adjusted = GetAdjustedBgra();
             HsvPreview = BitmapFactory.FromBgra(adjusted, Session.Width, Session.Height);
             OnPropertyChanged(nameof(HsvPreview));
         }
@@ -84,13 +98,7 @@ namespace laba2.ViewModels
             };
             if (dlg.ShowDialog() != true) return;
 
-            var adj = new HsvAdjustment
-            {
-                HueShift = HueShift,
-                SaturationShift = SaturationShift,
-                ValueShift = ValueShift
-            };
-            var adjusted = HsvImageProcessor.Adjust(Session.Bgra, adj);
+            var adjusted = GetAdjustedBgra();
             var bmp = BitmapSource.Create(Session.Width, Session.Height, 96, 96,
                 PixelFormats.Bgra32, null, adjusted, Session.Width * 4);
 
