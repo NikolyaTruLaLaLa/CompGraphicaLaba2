@@ -10,13 +10,83 @@
     <TabControl Margin="10" Background="White">
 
         <!-- ВКЛАДКА 1 -->
-        <TabItem Header="Задание 1">
-            <Grid Background="#F9F9F9">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="🚧" FontSize="48" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                    <TextBlock Text="Задание 1 находится в разработке" FontSize="20" Foreground="Gray" FontWeight="Bold"/>
-                    <TextBlock Text="Здесь будет реализован следующий алгоритм" FontSize="14" Foreground="Gray" HorizontalAlignment="Center" Margin="0,5,0,0"/>
-                </StackPanel>
+        <TabItem Header="Задание 1. Grayscale">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Button Grid.Row="0" Content="Загрузить изображение"
+                        Command="{Binding LoadImageCommand}"
+                        Width="200" Height="40" HorizontalAlignment="Left"
+                        Margin="0,0,0,15" FontSize="14"/>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- ЛЕВАЯ ЧАСТЬ: ИЗОБРАЖЕНИЯ -->
+                    <StackPanel Grid.Column="0" Margin="0,0,20,0">
+                        <TextBlock Text="Оригинал" FontWeight="Bold" Margin="0,0,0,5"/>
+                        <Image Source="{Binding OriginalImage}" Height="300"
+                               Stretch="Uniform" HorizontalAlignment="Left"/>
+
+                        <UniformGrid Columns="3" Margin="0,15,0,0">
+                            <StackPanel Margin="5">
+                                <TextBlock Text="NTSC" HorizontalAlignment="Center"
+                                           FontWeight="Bold" Foreground="DarkBlue" FontSize="12"/>
+                                <Image Source="{Binding GrayscaleNtscImage}" Height="150" Stretch="Uniform"/>
+                            </StackPanel>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="HDTV" HorizontalAlignment="Center"
+                                           FontWeight="Bold" Foreground="DarkGreen" FontSize="12"/>
+                                <Image Source="{Binding GrayscaleHdtvImage}" Height="150" Stretch="Uniform"/>
+                            </StackPanel>
+                            <StackPanel Margin="5">
+                                <TextBlock Text="Разность" HorizontalAlignment="Center"
+                                           FontWeight="Bold" Foreground="DarkRed" FontSize="12"/>
+                                <Image Source="{Binding GrayscaleDifferenceImage}" Height="150" Stretch="Uniform"/>
+                            </StackPanel>
+                        </UniformGrid>
+                    </StackPanel>
+
+                    <!-- ПРАВАЯ ЧАСТЬ: ГИСТОГРАММЫ -->
+                    <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+
+                            <StackPanel Margin="0,0,0,25">
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1"
+                                        Height="180" Margin="0,5,0,0">
+                                    <controls:HistogramControl Data="{Binding NtscHistogram}"
+                                                               BarBrush="Blue"
+                                                               Height="180"/>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,25">
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1"
+                                        Height="180" Margin="0,5,0,0">
+                                    <controls:HistogramControl Data="{Binding HdtvHistogram}"
+                                                               BarBrush="Green"
+                                                               Height="180"/>
+                                </Border>
+                            </StackPanel>
+
+                            <StackPanel Margin="0,0,0,25">
+                                <Border BorderBrush="LightGray" BorderThickness="0,0,0,1"
+                                        Height="180" Margin="0,5,0,0">
+                                    <controls:HistogramControl Data="{Binding DifferenceHistogram}"
+                                                               BarBrush="Red"
+                                                               Height="180"/>
+                                </Border>
+                            </StackPanel>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Grid>
         </TabItem>
 

@@ -46,6 +46,7 @@ namespace laba2.ViewModels
         /// </summary>
         private void OnImageLoaded(ImageSession session)
         {
+            Grayscale_OnImageLoaded(session);
             Rgb_OnImageLoaded(session);
             Hsv_OnImageLoaded(session);
         }
