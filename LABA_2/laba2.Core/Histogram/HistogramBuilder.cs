@@ -7,7 +7,7 @@
         // maxVal - максимальное значение, которое есть в pixels. Надо чтобы это число делилось на binCOunt. Если что можете взять с запасом.
         // binCOunt - количество прямоугольников на графике гистограммы. Как видите, каждый прямоугольник отвечает за какой-то промежуток.
         // title - заголовок гистограммы
-        public static HistogramData BuildFromBytes(byte[] pixels, int maxVal = 256, int binCount = 16, string title = "")
+        public static HistogramData BuildFromBytes(byte[] pixels, int maxVal = 256, int binCount = 32, string title = "")
         {
             if ((maxVal % binCount) != 0) throw new ArgumentException($"{nameof(maxVal)} should be divided for {nameof(binCount)}");
 
