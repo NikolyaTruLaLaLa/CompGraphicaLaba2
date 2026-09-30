@@ -12,7 +12,7 @@
         <TabItem Header="Задание 1">
             <!-- Задание 1 (заливка и граница) — пока в разработке -->
             <Grid Margin="20">
-                <TextBlock Text="Задание 1: в разработке" FontSize="24" Foreground="Gray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+				<local:FillAndBoundaryControl/>
             </Grid>
         </TabItem>
 
