@@ -1,0 +1,76 @@
+<UserControl x:Class="LABA_3.Controls.GradientTriangleControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="860">
+    <!-- Задание 3: интерфейс градиентной заливки треугольника.
+         Сверху — выбор алгоритма и кнопки действий, ниже — цвет каждой из трёх
+         вершин, затем холст 600x450, внизу — подсказка и технический вывод. -->
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto"
+                  Focusable="False" FocusVisualStyle="{x:Null}">
+        <Grid x:Name="RootGrid" Margin="8" HorizontalAlignment="Left" VerticalAlignment="Top">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Панель управления: выбор алгоритма растеризации и кнопки действий.
+                 Tag у пунктов ComboBox — имя значения перечисления TriangleRasterizer. -->
+            <WrapPanel x:Name="ToolPanel" Grid.Row="0" Margin="0,0,0,6" HorizontalAlignment="Left">
+                <TextBlock Text="Алгоритм растеризации:" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <ComboBox x:Name="AlgorithmCombo" Width="260" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0"
+                          SelectedIndex="0" SelectionChanged="AlgorithmCombo_SelectionChanged">
+                    <ComboBoxItem Content="Сканлайн + барицентрические" Tag="ScanLineBarycentric"/>
+                    <ComboBoxItem Content="Полуплоскости (edge functions)" Tag="EdgeFunctions"/>
+                </ComboBox>
+
+                <Button Content="Залить градиентом" Click="Fill_Click" Width="150" Height="35" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Button Content="Случайный" Click="Random_Click" Width="110" Height="35" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Button Content="Убрать точку" Click="RemovePoint_Click" Width="130" Height="35" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <Button Content="Очистить" Click="Clear_Click" Width="110" Height="35" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                <Button Content="Сравнить алгоритмы" Click="Compare_Click" Width="170" Height="35" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0"/>
+                <CheckBox x:Name="OverlayCheck" Content="Контур и вершины" IsChecked="True" FontSize="14" VerticalAlignment="Center" Click="OverlayCheck_Click"/>
+            </WrapPanel>
+
+            <!-- Цвет каждой вершины: плашка-образец SwatchX и список выбора.
+                 По умолчанию A — красный, B — зелёный, C — синий (задаётся в code-behind). -->
+            <WrapPanel x:Name="ColorPanel" Grid.Row="1" Margin="0,0,0,6" HorizontalAlignment="Left">
+                <TextBlock Text="A" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Border x:Name="SwatchA" Width="26" Height="26" BorderBrush="Gray" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <ComboBox x:Name="ColorComboA" Width="130" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0" SelectionChanged="ColorCombo_SelectionChanged"/>
+
+                <TextBlock Text="B" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Border x:Name="SwatchB" Width="26" Height="26" BorderBrush="Gray" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <ComboBox x:Name="ColorComboB" Width="130" FontSize="14" VerticalAlignment="Center" Margin="0,0,20,0" SelectionChanged="ColorCombo_SelectionChanged"/>
+
+                <TextBlock Text="C" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Border x:Name="SwatchC" Width="26" Height="26" BorderBrush="Gray" BorderThickness="1" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <ComboBox x:Name="ColorComboC" Width="130" FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0" SelectionChanged="ColorCombo_SelectionChanged"/>
+            </WrapPanel>
+
+            <!-- Холст 600x450 (рамка +1px). Image показывает пиксельный буфер холста,
+                 TextBlock A/B/C — подписи вершин, они лежат поверх картинки. -->
+            <Border x:Name="CanvasBorder" Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" Background="White"
+                    Width="602" Height="452" HorizontalAlignment="Left" VerticalAlignment="Top">
+                <Canvas x:Name="DrawingCanvas" Width="600" Height="450" Background="White" MouseLeftButtonDown="Canvas_MouseLeftButtonDown"
+                        HorizontalAlignment="Left" VerticalAlignment="Top" Focusable="False" FocusVisualStyle="{x:Null}">
+                    <Image x:Name="CanvasImage" Width="600" Height="450" IsHitTestVisible="False"/>
+                    <TextBlock x:Name="LabelA" Text="A" FontSize="15" FontWeight="Bold" Foreground="White" IsHitTestVisible="False" Visibility="Collapsed"/>
+                    <TextBlock x:Name="LabelB" Text="B" FontSize="15" FontWeight="Bold" Foreground="White" IsHitTestVisible="False" Visibility="Collapsed"/>
+                    <TextBlock x:Name="LabelC" Text="C" FontSize="15" FontWeight="Bold" Foreground="White" IsHitTestVisible="False" Visibility="Collapsed"/>
+                </Canvas>
+            </Border>
+
+            <!-- Подсказка пользователю (StatusText) и технический вывод:
+                 выбранный алгоритм, число залитых пикселей и время (InfoText). -->
+            <StackPanel x:Name="StatusPanel" Grid.Row="3" Margin="0,6,0,0">
+                <TextBlock x:Name="StatusText" Text="Кликните на холсте, чтобы задать вершину A" FontSize="14" Foreground="DarkBlue"/>
+                <TextBlock x:Name="InfoText" Text="" FontSize="12" Foreground="Gray" FontFamily="Consolas" Margin="0,4,0,0"/>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

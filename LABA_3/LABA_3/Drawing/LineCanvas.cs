@@ -1,87 +1,43 @@
+using System;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows;
 
 namespace LABA_3.Drawing
 {
-    public class LineCanvas
+    /// <summary>
+    /// Холст задания 2: два алгоритма построения отрезка поверх общего
+    /// пиксельного холста <see cref="PixelCanvas"/> — целочисленный
+    /// Брезенхем и сглаженный Ву.
+    /// </summary>
+    public class LineCanvas : PixelCanvas
     {
-        public const int Width = 600;
-        public const int Height = 450;
-        private const int Stride = Width * 4;
-
-        private readonly WriteableBitmap _bmp;
-        private readonly byte[] _pixels = new byte[Stride * Height];
-
-        public WriteableBitmap Bitmap => _bmp;
-
-        public LineCanvas()
+        /// <summary>Рисует отрезок целочисленным алгоритмом Брезенхема и показывает результат.</summary>
+        /// <param name="x0">X начала отрезка.</param>
+        /// <param name="y0">Y начала отрезка.</param>
+        /// <param name="x1">X конца отрезка.</param>
+        /// <param name="y1">Y конца отрезка.</param>
+        /// <param name="color">Цвет отрезка.</param>
+        public void DrawBresenham(int x0, int y0, int x1, int y1, Color color)
         {
-            _bmp = new WriteableBitmap(Width, Height, 96, 96, PixelFormats.Bgra32, null);
-            Clear();
-        }
-
-        public void Clear()
-        {
-            for (int i = 0; i < _pixels.Length; i += 4)
-            {
-                _pixels[i] = 255;     // B
-                _pixels[i + 1] = 255; // G
-                _pixels[i + 2] = 255; // R
-                _pixels[i + 3] = 255; // A
-            }
+            DrawLineBresenham(x0, y0, x1, y1, PackColor(color));
             UpdateBitmap();
         }
 
-        private void UpdateBitmap()
-        {
-            _bmp.WritePixels(new Int32Rect(0, 0, Width, Height), _pixels, Stride, 0);
-        }
-
+        /// <summary>Рисует один пиксель и показывает результат.</summary>
+        /// <param name="x">Координата по горизонтали.</param>
+        /// <param name="y">Координата по вертикали.</param>
+        /// <param name="color">Цвет пикселя.</param>
         public void DrawPixel(int x, int y, Color color)
         {
             SetPixel(x, y, color);
             UpdateBitmap();
         }
 
-        private void SetPixel(int x, int y, Color color)
-        {
-            if (x < 0 || x >= Width || y < 0 || y >= Height) return;
-            int idx = (y * Width + x) * 4;
-            _pixels[idx] = color.B;
-            _pixels[idx + 1] = color.G;
-            _pixels[idx + 2] = color.R;
-            _pixels[idx + 3] = color.A;
-        }
-
-        private void BlendPixel(int x, int y, Color color, float alpha)
-        {
-            if (x < 0 || x >= Width || y < 0 || y >= Height || alpha <= 0) return;
-            int idx = (y * Width + x) * 4;
-            byte a = (byte)(255 * alpha);
-            _pixels[idx] = (byte)(color.B * alpha + _pixels[idx] * (1 - alpha));
-            _pixels[idx + 1] = (byte)(color.G * alpha + _pixels[idx + 1] * (1 - alpha));
-            _pixels[idx + 2] = (byte)(color.R * alpha + _pixels[idx + 2] * (1 - alpha));
-            _pixels[idx + 3] = 255;
-        }
-
-        public void DrawBresenham(int x0, int y0, int x1, int y1, Color color)
-        {
-            int dx = Math.Abs(x1 - x0), dy = Math.Abs(y1 - y0);
-            int sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-            int err = dx - dy;
-
-            while (true)
-            {
-                SetPixel(x0, y0, color);
-                if (x0 == x1 && y0 == y1) break;
-                int e2 = 2 * err;
-                if (e2 > -dy) { err -= dy; x0 += sx; }
-                if (e2 < dx) { err += dx; y0 += sy; }
-            }
-            UpdateBitmap();
-        }
-
+        /// <summary>Рисует сглаженный (мягкий) отрезок алгоритмом Ву.</summary>
+        /// <param name="x0">X начала отрезка.</param>
+        /// <param name="y0">Y начала отрезка.</param>
+        /// <param name="x1">X конца отрезка.</param>
+        /// <param name="y1">Y конца отрезка.</param>
+        /// <remarks>Крайние пиксели линии смешиваются с фоном по доле перекрытия, поэтому линия выглядит ровнее.</remarks>
         public void DrawWu(int x0, int y0, int x1, int y1)
         {
             bool steep = Math.Abs(y1 - y0) > Math.Abs(x1 - x0);
@@ -146,9 +102,16 @@ namespace LABA_3.Drawing
             UpdateBitmap();
         }
 
+        /// <summary>Меняет два значения местами (для поворота отрезка в горизонтальное положение).</summary>
         private static void Swap<T>(ref T a, ref T b) { T t = a; a = b; b = t; }
+
+        /// <summary>Целая часть числа (округление вниз).</summary>
         private static int Ipart(float x) => (int)Math.Floor(x);
+
+        /// <summary>Дробная часть числа — доля перекрытия пикселя (0..1).</summary>
         private static float Fpart(float x) => x - Ipart(x);
+
+        /// <summary>Дополнение дробной части до единицы (1 − Fpart).</summary>
         private static float Rfpart(float x) => 1 - Fpart(x);
     }
 }
