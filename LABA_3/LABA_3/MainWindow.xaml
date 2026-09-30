@@ -4,18 +4,26 @@
         xmlns:local="clr-namespace:LABA_3.Controls"
         Title="Лаба 3: Растровая графика" Height="700" Width="900">
 
+    <!-- Окно с тремя вкладками-заданиями.
+         Каждое задание — отдельный UserControl из папки Controls,
+         вся работа с пикселями вынесена в классы из папки Drawing. -->
     <TabControl Margin="10">
 
         <TabItem Header="Задание 1">
-            <local:FillAndBoundaryControl/>
+            <!-- Задание 1 (заливка и граница) — пока в разработке -->
+            <Grid Margin="20">
+                <TextBlock Text="Задание 1: в разработке" FontSize="24" Foreground="Gray" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
         </TabItem>
 
         <TabItem Header="Задание 2">
-           
+            <!-- Задание 2: отрезки Брезенхема и Ву (Controls/LineDrawingControl) -->
+            <local:LineDrawingControl/>
         </TabItem>
 
         <TabItem Header="Задание 3">
-            
+            <!-- Задание 3: градиентный треугольник (Controls/GradientTriangleControl) -->
+            <local:GradientTriangleControl/>
         </TabItem>
 
     </TabControl>
