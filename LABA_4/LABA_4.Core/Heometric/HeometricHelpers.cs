@@ -54,12 +54,10 @@ namespace LABA_4.Core.Heometric
                 double xi = poly[i].X, yi = poly[i].Y;
                 double xj = poly[j].X, yj = poly[j].Y;
 
-                // Проверяем, пересекает ли горизонтальный луч (из точки вправо)
-                // это ребро (xi,yi)-(xj,yj)
                 bool intersect = ((yi > y) != (yj > y))
                     && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
 
-                if (intersect) inside = !inside;       // чётное — снаружи, нечётное — внутри
+                if (intersect) inside = !inside;       
             }
             return inside;
         }

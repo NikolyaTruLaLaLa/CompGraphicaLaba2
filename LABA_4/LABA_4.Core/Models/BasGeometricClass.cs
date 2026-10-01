@@ -79,7 +79,7 @@ namespace LABA_4.Core.Models
         }
 
         public override bool HitTest(double x, double y, double threshold)
-        => IsNearBorder(x, y, this, threshold) || IsInside(x, y, this);
+        => IsNearBorder(x, y, this, threshold);
     }
 
     public class Edge: BaseGeometricClass

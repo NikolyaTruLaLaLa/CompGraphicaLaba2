@@ -20,8 +20,6 @@ namespace LABA_4.UI.SceneControls
             _scene = scene;
         }
 
-        // --- Рисование ---
-
         public void AddPoint(double x, double y)
         {
             if (!IsDrawing) return;
@@ -45,8 +43,6 @@ namespace LABA_4.UI.SceneControls
 
         public void Cancel() => _pending.Clear();
 
-        // --- Выделение ---
-
         public void Select(double x, double y)
         {
             DeselectAll();
@@ -67,8 +63,6 @@ namespace LABA_4.UI.SceneControls
                 Selected = null;
             }
         }
-
-        // --- Полная очистка ---
 
         public void ClearAll()
         {
