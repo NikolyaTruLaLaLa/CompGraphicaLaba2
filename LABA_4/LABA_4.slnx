@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="LABA_4.Core/LABA_4.Core.csproj" />
+  <Project Path="LABA_4/LABA_4.UI.csproj" />
+</Solution>
