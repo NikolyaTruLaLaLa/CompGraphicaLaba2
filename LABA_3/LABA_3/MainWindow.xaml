@@ -11,9 +11,7 @@
 
         <TabItem Header="Задание 1">
             <!-- Задание 1 (заливка и граница) — пока в разработке -->
-            <Grid Margin="20">
 				<local:FillAndBoundaryControl/>
-            </Grid>
         </TabItem>
 
         <TabItem Header="Задание 2">

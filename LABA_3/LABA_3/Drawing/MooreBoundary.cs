@@ -44,7 +44,7 @@ namespace LABA_3.Drawing
             List<Point> contour = new List<Point>();
 
             int x = startX, y = startY;
-            int dir = 7; // пришли как будто с запада
+            int dir = 7; 
 
             long maxSteps = (long)buf.Width * buf.Height * 4L;
             long steps = 0;
@@ -62,7 +62,7 @@ namespace LABA_3.Drawing
 
                     if (IsBoundary(buf, nx, ny, boundaryColor))
                     {
-                        dir = (nd + 4) % 8; // обратное направление
+                        dir = (nd + 4) % 8; 
                         x = nx;
                         y = ny;
                         found = true;
@@ -70,7 +70,7 @@ namespace LABA_3.Drawing
                     }
                 }
 
-                if (!found) break; // изолированный пиксель
+                if (!found) break;
                 steps++;
                 if (steps > maxSteps) break;
             }
