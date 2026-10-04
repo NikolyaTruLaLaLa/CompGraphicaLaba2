@@ -1,11 +1,11 @@
 ﻿using LABA_4.Core;
 using LABA_4.UI.SceneControls;
 using LABA_4.Core.Models;
+using LABA_4.Core.Heometric;
 using System.Linq;
-using System.Reflection;
 using System.Windows;
-using System;
-using  static LABA_4.Core.Heometric.HeometricHelpers;
+using System.Windows.Media;
+using static LABA_4.Core.Heometric.HeometricHelpers;
 using LABA_4.Core.Matrix;
 
 namespace LABA_4
@@ -19,6 +19,7 @@ namespace LABA_4
             InitializeComponent();
             SceneView.Scene = _scene;
             SceneView.Editor = new SceneEditor(_scene);
+            UpdateStatusText();
             SceneView.Redraw();
         }
 
@@ -26,19 +27,26 @@ namespace LABA_4
         {
             if (SceneView?.Editor == null) return;
 
-            SceneView.Editor.IsDrawing = btnDrawMode.IsChecked == true;
+            bool isDrawing = btnDrawMode.IsChecked == true;
+            SceneView.Editor.SetMode(isDrawing ? EditorMode.Draw : EditorMode.None);
 
-            if (!SceneView.Editor.IsDrawing)
+            if (!isDrawing)
                 SceneView.Editor.Cancel();
 
+            UpdateStatusText();
             SceneView.Redraw();
         }
 
         private void btnClear_Click(object sender, RoutedEventArgs e)
         {
             _scene.Clear();
+            SceneView.Editor.ClearAll();
+            tbPointInPolyResult.Text = "";
+            tbIntersectionCount.Text = "";
+            tbPointEdgeResult.Text = "";
             SceneView.Redraw();
         }
+
         private void ApplyTransform_Click(object sender, RoutedEventArgs e)
         {
             var selected = SceneView.Editor?.Selected;
@@ -56,7 +64,6 @@ namespace LABA_4
                 return;
             }
 
-
             var (cx, cy) = selected.GetCenter();
             var m = MatrixAffine.RotationAroundDeg(angleDeg, cx, cy);
 
@@ -64,37 +71,157 @@ namespace LABA_4
             SceneView.Redraw();
         }
 
-        private void Check_Click(object sender, RoutedEventArgs e)
+        private void PointInPolyMode_Changed(object sender, RoutedEventArgs e)
         {
-            var selected = SceneView.Editor?.Selected;
-            if (selected == null)
-            {
-                tbCheckResult.Text = "Выделите фигуру";
-                tbCheckResult.Foreground = System.Windows.Media.Brushes.Gray;
-                return;
-            }
+            if (SceneView?.Editor == null) return;
 
-            if (!double.TryParse(tbCheckX.Text, out double x) ||
-                !double.TryParse(tbCheckY.Text, out double y))
+            bool enabled = btnPointInPolyMode.IsChecked == true;
+            SceneView.Editor.SetMode(enabled ? EditorMode.PointInPolygon : EditorMode.None);
+            
+            if (!enabled)
             {
-                tbCheckResult.Text = "Неверные координаты";
-                tbCheckResult.Foreground = System.Windows.Media.Brushes.Red;
-                return;
-            }
-
-            // Пока доступна только одна проверка — точка в полигоне
-            if (selected is Pol poly)
-            {
-                bool inside = IsInside(x, y, poly);
-                tbCheckResult.Text = inside ? "Внутри" : "Снаружи";
-                tbCheckResult.Foreground = inside
-                    ? System.Windows.Media.Brushes.Green
-                    : System.Windows.Media.Brushes.Red;
+                SceneView.Editor.ResetPointInPolygonCheck();
+                tbPointInPolyResult.Text = "";
+                UpdateStatusText();
             }
             else
             {
-                tbCheckResult.Text = "Выделен не полигон";
-                tbCheckResult.Foreground = System.Windows.Media.Brushes.Gray;
+                tbPointInPolyResult.Text = "";
+                tbStatusText.Text = "Режим: Точка в полигоне  |  Shift+ЛКМ — выбрать полигон, ЛКМ — проверить точку";
+            }
+            
+            SceneView.Redraw();
+        }
+
+        private void FindIntersections_Click(object sender, RoutedEventArgs e)
+        {
+            if (SceneView?.Editor == null) return;
+
+            var intersections = FindAllIntersections(_scene);
+            SceneView.Editor.IntersectionPoints.Clear();
+            SceneView.Editor.IntersectionPoints.AddRange(intersections);
+            SceneView.Editor.ShowIntersections = true;
+            
+            tbIntersectionCount.Text = $"Найдено точек пересечения: {intersections.Count}";
+            tbIntersectionCount.Foreground = intersections.Count > 0 ? Brushes.Green : Brushes.Red;
+            tbStatusText.Text = "Пересечения найдены. Нажмите кнопку повторно, чтобы скрыть.";
+            SceneView.Redraw();
+        }
+
+        private void FindIntersections_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (SceneView?.Editor == null) return;
+            
+            SceneView.Editor.ShowIntersections = false;
+            tbIntersectionCount.Text = "";
+            UpdateStatusText();
+            SceneView.Redraw();
+        }
+
+        private void PointEdgeMode_Changed(object sender, RoutedEventArgs e)
+        {
+            if (SceneView?.Editor == null) return;
+
+            bool enabled = btnPointEdgeMode.IsChecked == true;
+            SceneView.Editor.SetMode(enabled ? EditorMode.PointRelativeToEdge : EditorMode.None);
+            
+            if (!enabled)
+            {
+                SceneView.Editor.ClearCheckStates();
+                tbPointEdgeResult.Text = "";
+                UpdateStatusText();
+            }
+            else
+            {
+                tbPointEdgeResult.Text = "";
+                tbStatusText.Text = "Режим: Точка относительно ребра  |  Shift+ЛКМ — выбрать ребро/полигон, ЛКМ — проверить точку";
+            }
+            
+            SceneView.Redraw();
+        }
+
+        private void UpdateStatusText()
+        {
+            var editor = SceneView?.Editor;
+            if (editor == null) return;
+
+            if (editor.IsPointInPolygonMode)
+                tbStatusText.Text = "Режим: Точка в полигоне  |  Shift+ЛКМ — выбрать полигон, ЛКМ — проверить точку";
+            else if (editor.IsPointRelativeToEdgeMode)
+                tbStatusText.Text = "Режим: Точка относительно ребра  |  Shift+ЛКМ — выбрать ребро/полигон, ЛКМ — проверить точку";
+            else if (editor.IsDrawing)
+                tbStatusText.Text = "Режим рисования  |  ЛКМ — добавить точку, ПКМ — завершить";
+            else
+                tbStatusText.Text = "Shift+ЛКМ — выбрать объект, ЛКМ — проверить точку";
+        }
+
+        protected override void OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs e)
+        {
+            base.OnMouseLeftButtonDown(e);
+            
+            if (SceneView?.Editor == null) return;
+
+            var editor = SceneView.Editor;
+
+            if (editor.IsPointInPolygonMode)
+            {
+                if (editor.FirstPointForEdgeCheck != null && editor.SelectedPolygonForCheck != null)
+                {
+                    var result = PointInPolygon(
+                        editor.FirstPointForEdgeCheck.X, 
+                        editor.FirstPointForEdgeCheck.Y, 
+                        editor.SelectedPolygonForCheck,
+                        5.0); // 5 pixel threshold for border detection
+                    tbPointInPolyResult.Text = result switch
+                    {
+                        PointPosition.Inside => "ВНУТРИ",
+                        PointPosition.Outside => "СНАРУЖИ",
+                        PointPosition.OnBorder => "НА ГРАНИЦЕ",
+                        _ => ""
+                    };
+                    tbPointInPolyResult.Foreground = result switch
+                    {
+                        PointPosition.Inside => Brushes.Green,
+                        PointPosition.Outside => Brushes.Red,
+                        PointPosition.OnBorder => Brushes.Orange,
+                        _ => Brushes.Gray
+                    };
+                    // Test point kept - cleared on next Shift+LMB or mode change
+                }
+                else
+                {
+                    tbPointInPolyResult.Text = "";
+                }
+                SceneView.Redraw();
+            }
+            else if (editor.IsPointRelativeToEdgeMode)
+            {
+                if (editor.FirstPointForEdgeCheck != null && editor.SelectedEdgeForCheck != null)
+                {
+                    var result = PointRelativeToSegment(editor.FirstPointForEdgeCheck, editor.SelectedEdgeForCheck, 5.0);
+                    tbPointEdgeResult.Text = result switch
+                    {
+                        SegmentPosition.OnSegment => "НА ОТРЕЗКЕ",
+                        SegmentPosition.OnLineExtended => "НА ПРЯМОЙ",
+                        SegmentPosition.Left => "СЛЕВА",
+                        SegmentPosition.Right => "СПРАВА",
+                        _ => ""
+                    };
+                    tbPointEdgeResult.Foreground = result switch
+                    {
+                        SegmentPosition.OnSegment => Brushes.Green,
+                        SegmentPosition.OnLineExtended => Brushes.Orange,
+                        SegmentPosition.Left => Brushes.Blue,
+                        SegmentPosition.Right => Brushes.Red,
+                        _ => Brushes.Gray
+                    };
+                    // Test point kept - cleared on next Shift+LMB or mode change
+                }
+                else
+                {
+                    tbPointEdgeResult.Text = "";
+                }
+                SceneView.Redraw();
             }
         }
     }
