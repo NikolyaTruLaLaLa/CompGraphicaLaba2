@@ -1,12 +1,13 @@
 ﻿using LABA_4.Core;
-using LABA_4.UI.SceneControls;
-using LABA_4.Core.Models;
 using LABA_4.Core.Heometric;
+using LABA_4.Core.Matrix;
+using LABA_4.Core.Models;
+using LABA_4.UI.SceneControls;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using static LABA_4.Core.Heometric.HeometricHelpers;
-using LABA_4.Core.Matrix;
 
 namespace LABA_4
 {
@@ -19,6 +20,7 @@ namespace LABA_4
             InitializeComponent();
             SceneView.Scene = _scene;
             SceneView.Editor = new SceneEditor(_scene);
+            SceneView.CheckStateChanged += EvaluateChecks;
             UpdateStatusText();
             SceneView.Redraw();
         }
@@ -155,23 +157,22 @@ namespace LABA_4
                 tbStatusText.Text = "Shift+ЛКМ — выбрать объект, ЛКМ — проверить точку";
         }
 
-        protected override void OnMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs e)
-        {
-            base.OnMouseLeftButtonDown(e);
-            
-            if (SceneView?.Editor == null) return;
 
+        private void EvaluateChecks()
+        {
             var editor = SceneView.Editor;
+            if (editor == null) return;
 
             if (editor.IsPointInPolygonMode)
             {
-                if (editor.FirstPointForEdgeCheck != null && editor.SelectedPolygonForCheck != null)
+                if (editor.TestPoint != null && editor.SelectedPolygonForCheck != null)
                 {
                     var result = PointInPolygon(
-                        editor.FirstPointForEdgeCheck.X, 
-                        editor.FirstPointForEdgeCheck.Y, 
+                        editor.TestPoint.X,
+                        editor.TestPoint.Y,
                         editor.SelectedPolygonForCheck,
-                        5.0); // 5 pixel threshold for border detection
+                        5.0);
+
                     tbPointInPolyResult.Text = result switch
                     {
                         PointPosition.Inside => "ВНУТРИ",
@@ -186,7 +187,6 @@ namespace LABA_4
                         PointPosition.OnBorder => Brushes.Orange,
                         _ => Brushes.Gray
                     };
-                    // Test point kept - cleared on next Shift+LMB or mode change
                 }
                 else
                 {
@@ -196,9 +196,13 @@ namespace LABA_4
             }
             else if (editor.IsPointRelativeToEdgeMode)
             {
-                if (editor.FirstPointForEdgeCheck != null && editor.SelectedEdgeForCheck != null)
+                if (editor.TestPoint != null && editor.SelectedEdgeForCheck != null)
                 {
-                    var result = PointRelativeToSegment(editor.FirstPointForEdgeCheck, editor.SelectedEdgeForCheck, 5.0);
+                    var result = PointRelativeToSegment(
+                        editor.TestPoint,
+                        editor.SelectedEdgeForCheck,
+                        5.0);
+
                     tbPointEdgeResult.Text = result switch
                     {
                         SegmentPosition.OnSegment => "НА ОТРЕЗКЕ",
@@ -215,7 +219,6 @@ namespace LABA_4
                         SegmentPosition.Right => Brushes.Red,
                         _ => Brushes.Gray
                     };
-                    // Test point kept - cleared on next Shift+LMB or mode change
                 }
                 else
                 {

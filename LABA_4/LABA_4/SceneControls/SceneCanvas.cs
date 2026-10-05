@@ -13,6 +13,7 @@ namespace LABA_4.UI.SceneControls
         private SceneRender _renderer;
         private Point? _mousePos;
         public SceneEditor Editor { get; set; }
+        public event Action? CheckStateChanged;
         public Scene Scene
         {
             get => _scene;
@@ -54,14 +55,8 @@ namespace LABA_4.UI.SceneControls
                 _renderer.RenderEdgeDirectionArrow(dc, edge.first, edge.second);
             }
 
-            if (Editor != null && Editor.TestPoints.Count > 0)
-            {
-                foreach (var tp in Editor.TestPoints)
-                    _renderer.RenderPoint(dc, tp, Brushes.Purple, 6);
-            }
-
-            if (Editor != null && Editor.FirstPointForEdgeCheck != null)
-                _renderer.RenderPoint(dc, Editor.FirstPointForEdgeCheck, Brushes.Purple, 8);
+            if (Editor != null && Editor.TestPoint != null)
+                _renderer.RenderPoint(dc, Editor.TestPoint, Brushes.Purple, 8);
 
             DrawCursorCoords(dc);
         }
@@ -118,7 +113,6 @@ namespace LABA_4.UI.SceneControls
 
             Focus();
             var pos = e.GetPosition(this);
-            bool shiftPressed = (Keyboard.Modifiers & ModifierKeys.Shift) != 0;
 
             if (e.ChangedButton == MouseButton.Left)
             {
@@ -128,31 +122,11 @@ namespace LABA_4.UI.SceneControls
                 }
                 else if (Editor.IsPointInPolygonMode)
                 {
-                    if (shiftPressed)
-                    {
-                        // Shift+LMB: select polygon for checking
-                        Editor.HandlePointInPolygonSelect(pos.X, pos.Y);
-                        Editor.ClearTestPoint(); // Clear test points when selecting new polygon
-                    }
-                    else
-                    {
-                        // LMB: test point against selected polygon
-                        Editor.HandlePointInPolygonTest(pos.X, pos.Y);
-                    }
+                    Editor.HandlePointInPolygonSelect(pos.X, pos.Y);
                 }
                 else if (Editor.IsPointRelativeToEdgeMode)
                 {
-                    if (shiftPressed)
-                    {
-                        // Shift+LMB: select edge for checking
-                        Editor.HandlePointEdgeSelect(pos.X, pos.Y);
-                        Editor.ClearTestPoint(); // Clear test points when selecting new edge
-                    }
-                    else
-                    {
-                        // LMB: test point against selected edge
-                        Editor.HandlePointEdgeTest(pos.X, pos.Y);
-                    }
+                    Editor.HandlePointEdgeSelect(pos.X, pos.Y);
                 }
                 else
                 {
@@ -162,10 +136,23 @@ namespace LABA_4.UI.SceneControls
             else if (e.ChangedButton == MouseButton.Right)
             {
                 if (Editor.IsDrawing)
-                    Editor.Finish();
+                {
+                    Editor.Finish();         
+                }
+                else if (Editor.IsPointInPolygonMode)
+                {
+                    Editor.HandlePointInPolygonTest(pos.X, pos.Y);  
+                }
+                else if (Editor.IsPointRelativeToEdgeMode)
+                {
+                    Editor.HandlePointEdgeTest(pos.X, pos.Y);       
+                }
+                if (Editor.IsPointInPolygonMode || Editor.IsPointRelativeToEdgeMode)
+                    CheckStateChanged?.Invoke();
+
             }
 
-            InvalidateVisual();
+            Redraw();
         }
 
         protected override void OnMouseRightButtonDown(MouseButtonEventArgs e)
