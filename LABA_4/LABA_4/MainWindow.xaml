@@ -55,12 +55,12 @@
                         </StackPanel>
                         <StackPanel x:Name="pSx" Orientation="Horizontal">
                             <TextBlock Text="sx:" VerticalAlignment="Center" Margin="8,0,4,0"/>
-                            <TextBox x:Name="tbSx" Width="55" Text="1.2"
+                            <TextBox x:Name="tbSx" Width="55" Text="1,2"
                                      VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel x:Name="pSy" Orientation="Horizontal">
                             <TextBlock Text="sy:" VerticalAlignment="Center" Margin="8,0,4,0"/>
-                            <TextBox x:Name="tbSy" Width="55" Text="1.2"
+                            <TextBox x:Name="tbSy" Width="55" Text="1,2"
                                      VerticalAlignment="Center"/>
                         </StackPanel>
                         <StackPanel x:Name="pPx" Orientation="Horizontal">
