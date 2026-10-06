@@ -77,7 +77,32 @@ namespace LABA_4.Core.Matrix
         public static MatrixAffine RotationAround(double angleRad, double px, double py)
             => Translation(px, py) * Rotation(angleRad) * Translation(-px, -py);
 
+        public static MatrixAffine RotationAround(double angleRad, (double X, double Y) center)
+            => RotationAround(angleRad, center.X, center.Y);
+
         public static MatrixAffine RotationAroundDeg(double angleDeg, double px, double py)
             => RotationAround(angleDeg * Math.PI / 180.0, px, py);
+
+        public static MatrixAffine RotationAroundDeg(double angleDeg, (double X, double Y) center)
+            => RotationAroundDeg(angleDeg, center.X, center.Y);
+
+        public static MatrixAffine Scaling(double sx, double sy) => new MatrixAffine(
+            sx, 0, 0,
+            0, sy, 0,
+            0, 0, 1);
+
+        public static MatrixAffine ScalingAround(double sx, double sy, double px, double py)
+            => Translation(px, py) * Scaling(sx, sy) * Translation(-px, -py);
+
+        public static MatrixAffine ScalingAround(double sx, double sy, (double X, double Y) center)
+            => ScalingAround(sx, sy, center.X, center.Y);
+
+        // Применение матрицы к точке в однородных координатах: p' = M * (x, y, 1).
+        public (double X, double Y) Transform(double x, double y)
+        {
+            double x_t = this[0, 0] * x + this[0, 1] * y + this[0, 2];
+            double y_t = this[1, 0] * x + this[1, 1] * y + this[1, 2];
+            return (x_t, y_t);
+        }
     }
 }

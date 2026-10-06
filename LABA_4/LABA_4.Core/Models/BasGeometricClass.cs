@@ -14,6 +14,40 @@ namespace LABA_4.Core.Models
         public abstract bool HitTest(double x, double y, double threshold);
         public abstract (double X, double Y) GetCenter();
 
+        // --- Аффинные преобразования через фабрики MatrixAffine ---
+
+        public void Translate(double dx, double dy)
+            => ApplyMatrix(MatrixAffine.Translation(dx, dy));
+
+        public void Rotate(double angleRad, double px, double py)
+            => ApplyMatrix(MatrixAffine.RotationAround(angleRad, px, py));
+
+        public void RotateDeg(double angleDeg, double px, double py)
+            => ApplyMatrix(MatrixAffine.RotationAroundDeg(angleDeg, px, py));
+
+        public void RotateAroundCenter(double angleRad)
+        {
+            var (cx, cy) = GetCenter();
+            ApplyMatrix(MatrixAffine.RotationAround(angleRad, cx, cy));
+        }
+
+        public void RotateAroundCenterDeg(double angleDeg)
+        {
+            var (cx, cy) = GetCenter();
+            ApplyMatrix(MatrixAffine.RotationAroundDeg(angleDeg, cx, cy));
+        }
+
+        public void Scale(double sx, double sy)
+            => ApplyMatrix(MatrixAffine.Scaling(sx, sy));
+
+        public void ScaleAround(double sx, double sy, double px, double py)
+            => ApplyMatrix(MatrixAffine.ScalingAround(sx, sy, px, py));
+
+        public void ScaleAroundCenter(double sx, double sy)
+        {
+            var (cx, cy) = GetCenter();
+            ApplyMatrix(MatrixAffine.ScalingAround(sx, sy, cx, cy));
+        }
     }
 
     public class PointPol: BaseGeometricClass
@@ -28,10 +62,7 @@ namespace LABA_4.Core.Models
 
         public override void ApplyMatrix(MatrixAffine matr)
         {
-            double x_t;  double y_t;
-
-            x_t = matr[0, 0] * X + matr[0, 1] * Y + matr[0, 2] * 1;
-            y_t = matr[1, 0] * X + matr[1, 1] * Y + matr[1, 2] * 1;
+            var (x_t, y_t) = matr.Transform(X, Y);
 
             X = x_t; Y = y_t;
         }

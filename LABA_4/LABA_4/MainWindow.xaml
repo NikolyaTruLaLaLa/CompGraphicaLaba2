@@ -28,17 +28,54 @@
                         Click="btnClear_Click"/>
 
                 <GroupBox Header="Преобразование" Padding="6" Margin="0,0,16,0">
-                    <StackPanel Orientation="Horizontal">
-                        <ComboBox x:Name="cmbTransform" Width="110" SelectedIndex="0"
-                                  VerticalAlignment="Center">
-                            <ComboBoxItem Content="Поворот"/>
+                    <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ComboBox x:Name="cmbTransform" Width="175" SelectedIndex="2"
+                                  VerticalAlignment="Center"
+                                  SelectionChanged="Transform_SelectionChanged">
+                            <ComboBoxItem Content="Смещение (dx, dy)"/>
+                            <ComboBoxItem Content="Поворот вокруг точки"/>
+                            <ComboBoxItem Content="Поворот вокруг центра"/>
+                            <ComboBoxItem Content="Масштаб вокруг точки"/>
+                            <ComboBoxItem Content="Масштаб вокруг центра"/>
                         </ComboBox>
-                        <TextBlock Text="Угол (°):" VerticalAlignment="Center" Margin="8,0,4,0"/>
-                        <TextBox x:Name="tbAngle" Width="55" Text="45"
-                                 VerticalAlignment="Center"/>
+                        <StackPanel x:Name="pDx" Orientation="Horizontal">
+                            <TextBlock Text="dx:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbDx" Width="55" Text="20"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="pDy" Orientation="Horizontal">
+                            <TextBlock Text="dy:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbDy" Width="55" Text="20"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="pAngle" Orientation="Horizontal">
+                            <TextBlock Text="Угол (°):" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbAngle" Width="55" Text="45"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="pSx" Orientation="Horizontal">
+                            <TextBlock Text="sx:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbSx" Width="55" Text="1.2"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="pSy" Orientation="Horizontal">
+                            <TextBlock Text="sy:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbSy" Width="55" Text="1.2"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="pPx" Orientation="Horizontal">
+                            <TextBlock Text="px:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbPx" Width="55" Text="0"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel x:Name="pPy" Orientation="Horizontal">
+                            <TextBlock Text="py:" VerticalAlignment="Center" Margin="8,0,4,0"/>
+                            <TextBox x:Name="tbPy" Width="55" Text="0"
+                                     VerticalAlignment="Center"/>
+                        </StackPanel>
                         <Button Content="Применить" Margin="8,0,0,0" Height="26"
                                 Click="ApplyTransform_Click"/>
-                    </StackPanel>
+                    </WrapPanel>
                 </GroupBox>
 
                 <Separator Margin="0,0,16,0" Width="1" Background="#CCC"/>

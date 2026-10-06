@@ -1,10 +1,10 @@
 ﻿using LABA_4.Core;
 using LABA_4.Core.Heometric;
-using LABA_4.Core.Matrix;
 using LABA_4.Core.Models;
 using LABA_4.UI.SceneControls;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using static LABA_4.Core.Heometric.HeometricHelpers;
@@ -21,6 +21,7 @@ namespace LABA_4
             SceneView.Scene = _scene;
             SceneView.Editor = new SceneEditor(_scene);
             SceneView.CheckStateChanged += EvaluateChecks;
+            UpdateTransformFieldsVisibility();
             UpdateStatusText();
             SceneView.Redraw();
         }
@@ -49,6 +50,37 @@ namespace LABA_4
             SceneView.Redraw();
         }
 
+        private void Transform_SelectionChanged(object sender, SelectionChangedEventArgs e)
+            => UpdateTransformFieldsVisibility();
+
+        private void UpdateTransformFieldsVisibility()
+        {
+            if (cmbTransform == null || pDx == null || pDy == null || pAngle == null
+                || pSx == null || pSy == null || pPx == null || pPy == null)
+                return;
+
+            int mode = cmbTransform.SelectedIndex;
+            bool showShift = mode == 0;
+            bool showAngle = mode == 1 || mode == 2;
+            bool showScale = mode == 3 || mode == 4;
+            bool showPivot = mode == 1 || mode == 3;
+
+            pDx.Visibility = pDy.Visibility = showShift ? Visibility.Visible : Visibility.Collapsed;
+            pAngle.Visibility = showAngle ? Visibility.Visible : Visibility.Collapsed;
+            pSx.Visibility = pSy.Visibility = showScale ? Visibility.Visible : Visibility.Collapsed;
+            pPx.Visibility = pPy.Visibility = showPivot ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private bool TryParseParam(TextBox tb, string name, out double value)
+        {
+            if (double.TryParse(tb.Text, out value))
+                return true;
+
+            MessageBox.Show($"Некорректный параметр «{name}».", "Преобразование",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
         private void ApplyTransform_Click(object sender, RoutedEventArgs e)
         {
             var selected = SceneView.Editor?.Selected;
@@ -59,17 +91,49 @@ namespace LABA_4
                 return;
             }
 
-            if (!double.TryParse(tbAngle.Text, out double angleDeg))
+            switch (cmbTransform.SelectedIndex)
             {
-                MessageBox.Show("Некорректный угол.", "Преобразование",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                case 0: // Смещение на dx, dy
+                    if (!TryParseParam(tbDx, "dx", out double dx)
+                        || !TryParseParam(tbDy, "dy", out double dy))
+                        return;
+                    selected.Translate(dx, dy);
+                    break;
+
+                case 1: // Поворот вокруг заданной точки
+                    if (!TryParseParam(tbAngle, "угол", out double angleDeg)
+                        || !TryParseParam(tbPx, "px", out double rpx)
+                        || !TryParseParam(tbPy, "py", out double rpy))
+                        return;
+                    selected.RotateDeg(angleDeg, rpx, rpy);
+                    break;
+
+                case 2: // Поворот вокруг своего центра
+                    if (!TryParseParam(tbAngle, "угол", out double centerAngleDeg))
+                        return;
+                    selected.RotateAroundCenterDeg(centerAngleDeg);
+                    break;
+
+                case 3: // Масштабирование относительно заданной точки
+                    if (!TryParseParam(tbSx, "sx", out double sx)
+                        || !TryParseParam(tbSy, "sy", out double sy)
+                        || !TryParseParam(tbPx, "px", out double spx)
+                        || !TryParseParam(tbPy, "py", out double spy))
+                        return;
+                    selected.ScaleAround(sx, sy, spx, spy);
+                    break;
+
+                case 4: // Масштабирование относительно своего центра
+                    if (!TryParseParam(tbSx, "sx", out double csx)
+                        || !TryParseParam(tbSy, "sy", out double csy))
+                        return;
+                    selected.ScaleAroundCenter(csx, csy);
+                    break;
+
+                default:
+                    return;
             }
 
-            var (cx, cy) = selected.GetCenter();
-            var m = MatrixAffine.RotationAroundDeg(angleDeg, cx, cy);
-
-            selected.ApplyMatrix(m);
             SceneView.Redraw();
         }
 
