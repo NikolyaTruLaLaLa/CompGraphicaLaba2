@@ -14,8 +14,6 @@ namespace LABA_4.Core.Models
         public abstract bool HitTest(double x, double y, double threshold);
         public abstract (double X, double Y) GetCenter();
 
-        // --- Аффинные преобразования через фабрики MatrixAffine ---
-
         public void Translate(double dx, double dy)
             => ApplyMatrix(MatrixAffine.Translation(dx, dy));
 
@@ -38,15 +36,15 @@ namespace LABA_4.Core.Models
         }
 
         public void Scale(double sx, double sy)
-            => ApplyMatrix(MatrixAffine.Scaling(sx, sy));
+            => ApplyMatrix(MatrixAffine.Scaling(sx, sy, (0, 0)));
 
         public void ScaleAround(double sx, double sy, double px, double py)
-            => ApplyMatrix(MatrixAffine.ScalingAround(sx, sy, px, py));
+            => ApplyMatrix(MatrixAffine.Scaling(sx, sy, (px, py)));
 
         public void ScaleAroundCenter(double sx, double sy)
         {
             var (cx, cy) = GetCenter();
-            ApplyMatrix(MatrixAffine.ScalingAround(sx, sy, cx, cy));
+            ApplyMatrix(MatrixAffine.Scaling(sx, sy, (cx, cy)));
         }
     }
 
@@ -62,7 +60,10 @@ namespace LABA_4.Core.Models
 
         public override void ApplyMatrix(MatrixAffine matr)
         {
-            var (x_t, y_t) = matr.Transform(X, Y);
+            double x_t;  double y_t;
+
+            x_t = matr[0, 0] * X + matr[0, 1] * Y + matr[0, 2] * 1;
+            y_t = matr[1, 0] * X + matr[1, 1] * Y + matr[1, 2] * 1;
 
             X = x_t; Y = y_t;
         }
