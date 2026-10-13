@@ -1,11 +1,11 @@
 ﻿<Window x:Class="BezierSpline.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Лабораторная работа" Height="700" Width="1100"
+        Title="Лабораторная работа" Height="700" Width="1220"
         Background="#EEE">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
+            <ColumnDefinition Width="240"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
@@ -19,7 +19,7 @@
                          BorderThickness="0"
                          SelectionChanged="TaskList_SelectionChanged">
                     <ListBoxItem Content="Задание 1" Padding="16,10"/>
-                    <ListBoxItem Content="Задание 2" Padding="16,10"/>
+                    <ListBoxItem Content="Задание 2 — Midpoint Displacement" Padding="16,10"/>
                     <ListBoxItem Content="Задание 3 — Сплайны Безье" Padding="16,10"/>
                 </ListBox>
             </StackPanel>

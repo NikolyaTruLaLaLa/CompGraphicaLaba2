@@ -9,7 +9,7 @@ namespace BezierSpline
         public MainWindow()
         {
             InitializeComponent();
-            taskList.SelectedIndex = 2; // по умолчанию открываем 3-е задание
+            taskList.SelectedIndex = 1; // по умолчанию открываем 2-е задание
         }
 
         private void TaskList_SelectionChanged(object sender, SelectionChangedEventArgs e)
