@@ -4,12 +4,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using BezierSpline.Math;
 
 namespace BezierSpline.Views
 {
     public partial class Task2View : UserControl
     {
-        private Random random = new Random();
         private List<Point> currentPoints = new List<Point>();
         private List<List<Point>> allSteps = new List<List<Point>>();
         private bool showingSteps = false;
@@ -60,8 +60,6 @@ namespace BezierSpline.Views
             if (!int.TryParse(seedBox.Text, out int seed))
                 seed = 12345;
 
-            random = new Random(seed);
-
             int iterations = (int)iterationsSlider.Value;
             double roughness = roughnessSlider.Value;
             double displacementFactor = displacementSlider.Value;
@@ -69,42 +67,8 @@ namespace BezierSpline.Views
             double width = canvas.ActualWidth > 0 ? canvas.ActualWidth : 800;
             double height = canvas.ActualHeight > 0 ? canvas.ActualHeight : 400;
 
-            double startY = height * 0.5;
-
-            currentPoints = new List<Point>
-            {
-                new Point(0, startY),
-                new Point(width, startY)
-            };
-
-            allSteps = new List<List<Point>> { new List<Point>(currentPoints) };
-
-            double displacement = height * displacementFactor;
-
-            for (int i = 0; i < iterations; i++)
-            {
-                var newPoints = new List<Point>();
-                for (int j = 0; j < currentPoints.Count - 1; j++)
-                {
-                    Point p1 = currentPoints[j];
-                    Point p2 = currentPoints[j + 1];
-
-                    newPoints.Add(p1);
-
-                    double midX = (p1.X + p2.X) / 2;
-                    double midY = (p1.Y + p2.Y) / 2;
-                    double offset = (random.NextDouble() - 0.5) * 2 * displacement;
-                    double newY = midY + offset;
-                    newY = System.Math.Max(0, System.Math.Min(height, newY));
-                    newPoints.Add(new Point(midX, newY));
-                }
-                newPoints.Add(currentPoints[currentPoints.Count - 1]);
-
-                currentPoints = newPoints;
-                allSteps.Add(currentPoints);
-
-                displacement *= System.Math.Pow(2, -roughness);
-            }
+            allSteps = MidpointDisplacement.Generate(iterations, roughness, displacementFactor, seed, width, height);
+            currentPoints = allSteps[allSteps.Count - 1];
 
             showingSteps = false;
             nextStepBtn.Visibility = Visibility.Collapsed;
