@@ -1,0 +1,148 @@
+﻿<Window x:Class="LABA_6.UI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Лаба 6 - Аффинные преобразования" Height="700" Width="1000"
+        Loaded="OnWindowLoaded">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="320"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Место для 3D (Черный Canvas) -->
+        <Canvas x:Name="DrawCanvas" Grid.Column="0" Background="Black" 
+                SizeChanged="OnCanvasSizeChanged"/>
+
+        <!-- Панель управления -->
+        <ScrollViewer Grid.Column="1" Background="#1E1E1E" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="10">
+
+                <!-- 1. Выбор фигуры -->
+                <GroupBox Header="Многогранник" Foreground="White">
+                    <StackPanel Margin="2">
+                        <ComboBox x:Name="PolyhedronComboBox" SelectionChanged="OnPolyhedronChanged" Margin="0,5">
+                            <ComboBoxItem Content="Тетраэдр" IsSelected="True"/>
+                            <ComboBoxItem Content="Гексаэдр (Куб)"/>
+                            <ComboBoxItem Content="Октаэдр"/>
+                            <ComboBoxItem Content="Икосаэдр"/>
+                            <ComboBoxItem Content="Додекаэдр"/>
+                        </ComboBox>
+                        <Button Content="Сбросить все преобразования" Click="OnResetClick" Margin="0,5" Padding="3"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 2. Проекция -->
+                <GroupBox Header="Проекция" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <RadioButton x:Name="PerspectiveRadio" Content="Перспективная" Foreground="White" 
+                                     IsChecked="True" Checked="OnProjectionChanged" GroupName="Proj"/>
+                        <RadioButton x:Name="AxonometricRadio" Content="Аксонометрическая" Foreground="White" 
+                                     Checked="OnProjectionChanged" GroupName="Proj"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 3. Смещение -->
+                <GroupBox Header="Смещение (Translation)" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <UniformGrid Columns="3">
+                            <TextBlock Text="dx" Foreground="Gray"/>
+                            <TextBlock Text="dy" Foreground="Gray"/>
+                            <TextBlock Text="dz" Foreground="Gray"/>
+                        </UniformGrid>
+                        <UniformGrid Columns="3">
+                            <TextBox x:Name="TxBox" Text="0"/>
+                            <TextBox x:Name="TyBox" Text="0"/>
+                            <TextBox x:Name="TzBox" Text="0"/>
+                        </UniformGrid>
+                        <Button Content="Сместить" Click="OnTranslateClick" Margin="0,5" Padding="2"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 4. Поворот -->
+                <GroupBox Header="Поворот вокруг X/Y/Z (градусы)" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <UniformGrid Columns="3">
+                            <TextBlock Text="Угол X" Foreground="Gray"/>
+                            <TextBlock Text="Угол Y" Foreground="Gray"/>
+                            <TextBlock Text="Угол Z" Foreground="Gray"/>
+                        </UniformGrid>
+                        <UniformGrid Columns="3">
+                            <TextBox x:Name="RxBox" Text="0"/>
+                            <TextBox x:Name="RyBox" Text="0"/>
+                            <TextBox x:Name="RzBox" Text="0"/>
+                        </UniformGrid>
+                        <Button Content="Повернуть" Click="OnRotateClick" Margin="0,5" Padding="2"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 5. Масштаб -->
+                <GroupBox Header="Масштаб (Scale)" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <UniformGrid Columns="3">
+                            <TextBlock Text="sx" Foreground="Gray"/>
+                            <TextBlock Text="sy" Foreground="Gray"/>
+                            <TextBlock Text="sz" Foreground="Gray"/>
+                        </UniformGrid>
+                        <UniformGrid Columns="3">
+                            <TextBox x:Name="SxBox" Text="1"/>
+                            <TextBox x:Name="SyBox" Text="1"/>
+                            <TextBox x:Name="SzBox" Text="1"/>
+                        </UniformGrid>
+                        <Button Content="Масштабировать" Click="OnScaleClick" Margin="0,5" Padding="2"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 6. Отражение -->
+                <GroupBox Header="Отражение относительно плоскости" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <ComboBox x:Name="ReflectionComboBox" Margin="0,5">
+                            <ComboBoxItem Content="Плоскость XY" IsSelected="True"/>
+                            <ComboBoxItem Content="Плоскость XZ"/>
+                            <ComboBoxItem Content="Плоскость YZ"/>
+                        </ComboBox>
+                        <Button Content="Отразить" Click="OnReflectClick" Margin="0,5" Padding="2"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- 7. Спец. преобразования -->
+                <GroupBox Header="Спец. преобразования" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <TextBlock Text="Масштаб относительно центра:" Foreground="White" Margin="0,5,0,0"/>
+                        <UniformGrid Columns="3">
+                            <TextBox x:Name="CxBox" Text="1"/>
+                            <TextBox x:Name="CyBox" Text="1"/>
+                            <TextBox x:Name="CzBox" Text="1"/>
+                        </UniformGrid>
+                        <Button Content="Масштаб от центра" Click="OnCenterScaleClick" Margin="0,5" Padding="2"/>
+
+                        <TextBlock Text="Вращение через центр ∥ оси:" Foreground="White" Margin="0,10,0,0"/>
+                        <UniformGrid Columns="2">
+                            <ComboBox x:Name="CenterAxisCombo" Margin="0,0,5,0">
+                                <ComboBoxItem Content="Ось X" IsSelected="True"/>
+                                <ComboBoxItem Content="Ось Y"/>
+                                <ComboBoxItem Content="Ось Z"/>
+                            </ComboBox>
+                            <TextBox x:Name="CenterAngleBox" Text="45"/>
+                        </UniformGrid>
+                        <Button Content="Вращать от центра" Click="OnCenterRotateClick" Margin="0,5" Padding="2"/>
+
+                        <TextBlock Text="Прямая (P1 → P2) и Угол:" Foreground="White" Margin="0,10,0,0"/>
+                        <UniformGrid Columns="3">
+                            <TextBox x:Name="P1x" Text="0"/>
+                            <TextBox x:Name="P1y" Text="0"/>
+                            <TextBox x:Name="P1z" Text="0"/>
+                        </UniformGrid>
+                        <UniformGrid Columns="3">
+                            <TextBox x:Name="P2x" Text="0"/>
+                            <TextBox x:Name="P2y" Text="1"/>
+                            <TextBox x:Name="P2z" Text="0"/>
+                        </UniformGrid>
+                        <TextBox x:Name="LineAngleBox" Text="45" Margin="0,2"/>
+                        <Button Content="Вращать вокруг прямой" Click="OnLineRotateClick" Margin="0,5" Padding="2"/>
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>
