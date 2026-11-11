@@ -9,15 +9,12 @@
             <ColumnDefinition Width="320"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Место для 3D (Черный Canvas) -->
         <Canvas x:Name="DrawCanvas" Grid.Column="0" Background="Black" 
                 SizeChanged="OnCanvasSizeChanged"/>
 
-        <!-- Панель управления -->
         <ScrollViewer Grid.Column="1" Background="#1E1E1E" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="10">
 
-                <!-- 1. Выбор фигуры -->
                 <GroupBox Header="Многогранник" Foreground="White">
                     <StackPanel Margin="2">
                         <ComboBox x:Name="PolyhedronComboBox" SelectionChanged="OnPolyhedronChanged" Margin="0,5">
@@ -27,11 +24,20 @@
                             <ComboBoxItem Content="Икосаэдр"/>
                             <ComboBoxItem Content="Додекаэдр"/>
                         </ComboBox>
-                        <Button Content="Сбросить все преобразования" Click="OnResetClick" Margin="0,5" Padding="3"/>
                     </StackPanel>
                 </GroupBox>
+                <Button Content="Сбросить все преобразования" Click="OnResetClick" Margin="0,5" Padding="3"/>
 
-                <!-- 2. Проекция -->
+                <Grid Margin="0,5,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button Content="Загрузить (.obj)" Click="OnLoadObjClick" Padding="3" Margin="0,0,2,0" Grid.Column="0"/>
+                    <Button Content="Сохранить (.obj)" Click="OnSaveObjClick" Padding="3" Margin="2,0,0,0" Grid.Column="1"/>
+                </Grid>
+
+
                 <GroupBox Header="Проекция" Foreground="White" Margin="0,10,0,0">
                     <StackPanel Margin="2">
                         <RadioButton x:Name="PerspectiveRadio" Content="Перспективная" Foreground="White" 
@@ -41,7 +47,6 @@
                     </StackPanel>
                 </GroupBox>
 
-                <!-- 3. Смещение -->
                 <GroupBox Header="Смещение (Translation)" Foreground="White" Margin="0,10,0,0">
                     <StackPanel Margin="2">
                         <UniformGrid Columns="3">
@@ -58,7 +63,6 @@
                     </StackPanel>
                 </GroupBox>
 
-                <!-- 4. Поворот -->
                 <GroupBox Header="Поворот вокруг X/Y/Z (градусы)" Foreground="White" Margin="0,10,0,0">
                     <StackPanel Margin="2">
                         <UniformGrid Columns="3">
@@ -75,7 +79,6 @@
                     </StackPanel>
                 </GroupBox>
 
-                <!-- 5. Масштаб -->
                 <GroupBox Header="Масштаб (Scale)" Foreground="White" Margin="0,10,0,0">
                     <StackPanel Margin="2">
                         <UniformGrid Columns="3">
@@ -92,7 +95,6 @@
                     </StackPanel>
                 </GroupBox>
 
-                <!-- 6. Отражение -->
                 <GroupBox Header="Отражение относительно плоскости" Foreground="White" Margin="0,10,0,0">
                     <StackPanel Margin="2">
                         <ComboBox x:Name="ReflectionComboBox" Margin="0,5">
@@ -104,7 +106,6 @@
                     </StackPanel>
                 </GroupBox>
 
-                <!-- 7. Спец. преобразования -->
                 <GroupBox Header="Спец. преобразования" Foreground="White" Margin="0,10,0,0">
                     <StackPanel Margin="2">
                         <TextBlock Text="Масштаб относительно центра:" Foreground="White" Margin="0,5,0,0"/>
@@ -139,6 +140,74 @@
                         </UniformGrid>
                         <TextBox x:Name="LineAngleBox" Text="45" Margin="0,2"/>
                         <Button Content="Вращать вокруг прямой" Click="OnLineRotateClick" Margin="0,5" Padding="2"/>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Тело вращения" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <ComboBox x:Name="ProfileComboBox" SelectionChanged="OnProfileChanged" Margin="0,0,0,5">
+                            <ComboBoxItem Content="Цилиндр" IsSelected="True"/>
+                            <ComboBoxItem Content="Конус"/>
+                            <ComboBoxItem Content="Ваза"/>
+                            <ComboBoxItem Content="Сфера"/>
+                            <ComboBoxItem Content="Свой профиль"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Профиль (X,Y; X,Y...):" Foreground="Gray"/>
+                        <TextBox x:Name="ProfileTextBox" Text="1,0; 1,3" Margin="0,0,0,5" IsEnabled="False"/>
+
+                        <UniformGrid Columns="2">
+                            <StackPanel Margin="0,0,5,0">
+                                <TextBlock Text="Ось:" Foreground="Gray"/>
+                                <ComboBox x:Name="RevAxisComboBox">
+                                    <ComboBoxItem Content="X"/>
+                                    <ComboBoxItem Content="Y" IsSelected="True"/>
+                                    <ComboBoxItem Content="Z"/>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="Разбиений:" Foreground="Gray"/>
+                                <TextBox x:Name="DivisionsTextBox" Text="24"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <Button Content="Построить вращением" Click="OnBuildRevolutionClick" Margin="0,8,0,0" Padding="3"/>
+                    </StackPanel>
+                </GroupBox>
+                <GroupBox Header="График функции f(x, y)" Foreground="White" Margin="0,10,0,0">
+                    <StackPanel Margin="2">
+                        <ComboBox x:Name="FunctionComboBox" SelectionChanged="OnFunctionSelectionChanged" Margin="0,0,0,5">
+                            <ComboBoxItem Content="Плоскость (z = x + y)" IsSelected="True"/>
+                            <ComboBoxItem Content="Параболоид (z = x² + y²)"/>
+                            <ComboBoxItem Content="Седло (z = x² - y²)"/>
+                            <ComboBoxItem Content="Волна (z = sin(x)*cos(y))"/>
+                            <ComboBoxItem Content="Своя функция (введите ниже)"/>
+                        </ComboBox>
+
+                        <TextBlock Text="Диапазоны X и Y:" Foreground="Gray"/>
+                        <UniformGrid Columns="4" Margin="0,0,0,5">
+                            <TextBox x:Name="XMinBox" Text="-2"/>
+                            <TextBox x:Name="XMaxBox" Text="2"/>
+                            <TextBox x:Name="YMinBox" Text="-2"/>
+                            <TextBox x:Name="YMaxBox" Text="2"/>
+                        </UniformGrid>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                            <TextBlock Text="Разбиений:" Foreground="Gray" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBox x:Name="GraphDivisionsBox" Text="20" Width="50"/>
+                        </StackPanel>
+
+                        <Grid Margin="0,5,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Text="f(x,y) =" Foreground="Gray" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBox x:Name="CustomFormulaBox" Grid.Column="1" Text="sin(x) + cos(y)" IsEnabled="False" ToolTip="Пример: x^2 + y^2, sin(x)*cos(y), sqrt(x^2+y^2)"/>
+                        </Grid>
+
+                        <Button Content="Построить график" Click="OnBuildGraphClick" Margin="0,8,0,0" Padding="3"/>
                     </StackPanel>
                 </GroupBox>
 
