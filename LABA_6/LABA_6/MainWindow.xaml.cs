@@ -1,10 +1,12 @@
 ﻿using LABA_6.Core.Factory;
 using LABA_6.Core.Models;
+using LABA_6.Core.Rendering;
 using LABA_6.UI.Factory;
 using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media.Imaging;
 using Camera = LABA_6.Core.Models.Camera;
 
 namespace LABA_6.UI
@@ -14,6 +16,8 @@ namespace LABA_6.UI
         private Mesh _baseMesh = null!;
         private Mesh _mesh = null!;
         private Matrix4x4 _modelMatrix = Matrix4x4.Identity;
+        private Mesh? _mesh2 = null;
+        private Matrix4x4 _modelMatrix2 = Matrix4x4.Identity;
         private readonly Camera _camera;
 
         public MainWindow()

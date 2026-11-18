@@ -1,96 +1,98 @@
 ﻿using LABA_6.Core.Models;
+using LABA_6.Core.Rendering;
 using System;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Shapes;
+using System.Windows.Media.Imaging;
 
 namespace LABA_6.UI
 {
     public partial class MainWindow : Window
     {
+        private WriteableBitmap _bitmap = null!;
+        private FrameBuffer _frameBuffer = null!;
+
         private void OnProjectionChanged(object sender, RoutedEventArgs e) => RenderScene();
+
+        private void OnCullingChanged(object sender, RoutedEventArgs e) => RenderScene();
+
+        private void OnRenderSettingsChanged(object sender, RoutedEventArgs e) => RenderScene();
+
+        private void OnViewVectorChanged(object sender, RoutedEventArgs e) => RenderScene();
+
+        private void OnOverlapChanged(object sender, RoutedEventArgs e)
+        {
+            if (OverlapCheckBox.IsChecked == true)
+            {
+                // Генерируем сферу через RevolutionFactory
+                var profile = new System.Collections.Generic.List<Point3>();
+                int segments = 16;
+                for (int i = 0; i <= segments; i++)
+                {
+                    float angle = (float)(-Math.PI / 2 + Math.PI * i / segments);
+                    profile.Add(new Point3((float)Math.Cos(angle), (float)Math.Sin(angle), 0));
+                }
+                _mesh2 = LABA_6.Core.Factory.RevolutionFactory.Create(profile, 24, LABA_6.Core.Factory.TransformFactory.CoordinateAxis.Y);
+
+                // Смещаем сферу, чтобы она пересекалась с объектом в центре
+                _modelMatrix2 = Matrix4x4.Translation(0.8f, 0.8f, 0f);
+            }
+            else
+            {
+                _mesh2 = null;
+            }
+            RenderScene();
+        }
 
         private void RenderScene()
         {
-            if (DrawCanvas.ActualWidth == 0 || _mesh == null) return;
-
-            DrawCanvas.Children.Clear();
-
-            double width = DrawCanvas.ActualWidth;
-            double height = DrawCanvas.ActualHeight;
-            float aspect = (float)(width / height);
-
-            Matrix4x4 view = _camera.GetViewMatrix();
-            Matrix4x4 proj = PerspectiveRadio.IsChecked == true
-                ? _camera.GetProjectionMatrix(aspect)
-                : Matrix4x4.Scale(0.4f, 0.4f, 0.4f);
-
-            Matrix4x4 viewProj = proj * view;
-
-            DrawAxes(viewProj, width, height);
-
-            var screenPoints = new Point?[_mesh.VertexCount];
-
-            for (int i = 0; i < _mesh.VertexCount; i++)
+            try
             {
-                var projectedV = viewProj * _mesh.Vertices[i];
+                int w = (int)RenderBorder.ActualWidth;
+                int h = (int)RenderBorder.ActualHeight;
 
-                if (float.IsNaN(projectedV.X) || float.IsNaN(projectedV.Y) ||
-                    float.IsInfinity(projectedV.X) || float.IsInfinity(projectedV.Y))
+                if (w <= 0 || h <= 0 || _mesh == null) return;
+
+                if (_bitmap == null || _bitmap.PixelWidth != w || _bitmap.PixelHeight != h)
                 {
-                    screenPoints[i] = null; 
+                    _bitmap = new WriteableBitmap(w, h, 96, 96, PixelFormats.Bgra32, null);
+                    RenderImage.Source = _bitmap;
+                    _frameBuffer = new FrameBuffer(w, h);
                 }
-                else
+
+                bool isPerspective = PerspectiveRadio.IsChecked == true;
+                bool doCulling = CullingCheckBox.IsChecked == true;
+                bool showNormals = ShowNormalsCheckBox.IsChecked == true;
+
+                Point3 customViewDir = new Point3(GetFloat(ViewXBox, 0f), GetFloat(ViewYBox, 0f), GetFloat(ViewZBox, -1f)).Normalized();
+
+                // Формируем сцену
+                var sceneObjects = new System.Collections.Generic.List<SceneObject>
                 {
-                    screenPoints[i] = new Point(
-                        (projectedV.X + 1.0) * 0.5 * width,
-                        (1.0 - projectedV.Y) * 0.5 * height);
+                    new SceneObject(_mesh, _modelMatrix, Rasterizer.ColorCyan)
+                };
+
+                if (_mesh2 != null)
+                {
+                    // Второй объект делаем фиолетовым (Magenta), чтобы отличать
+                    sceneObjects.Add(new SceneObject(_mesh2, _modelMatrix2, unchecked((int)0xFFFF00FF)));
                 }
+
+                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling, customViewDir, showNormals, out int renderedFaces);
+
+                _bitmap.Lock();
+                Marshal.Copy(_frameBuffer.Color, 0, _bitmap.BackBuffer, _frameBuffer.Color.Length);
+                _bitmap.AddDirtyRect(new Int32Rect(0, 0, w, h));
+                _bitmap.Unlock();
+
+                int totalFaces = _mesh.FaceCount + (_mesh2?.FaceCount ?? 0);
+                FaceCountText.Text = $"Отрисовано граней: {renderedFaces} / {totalFaces}";
             }
-
-            var edgeBrush = new SolidColorBrush(Colors.Cyan);
-            foreach (var face in _mesh.Faces)
+            catch (Exception ex)
             {
-                for (int i = 0; i < face.Count; i++)
-                {
-                    var p1 = screenPoints[face.Indices[i]];
-                    var p2 = screenPoints[face.Indices[(i + 1) % face.Count]];
-
-                    if (p1.HasValue && p2.HasValue)
-                    {
-                        DrawCanvas.Children.Add(new Line
-                        {
-                            X1 = p1.Value.X,
-                            Y1 = p1.Value.Y,
-                            X2 = p2.Value.X,
-                            Y2 = p2.Value.Y,
-                            Stroke = edgeBrush,
-                            StrokeThickness = 1.5
-                        });
-                    }
-                }
+                MessageBox.Show(ex.ToString(), "Ошибка в RenderScene");
             }
-        }
-
-        private void DrawAxes(Matrix4x4 viewProj, double width, double height)
-        {
-            Point Project(Point3 v)
-            {
-                var p = viewProj * v;
-                return new Point((p.X + 1.0) * 0.5 * width, (1.0 - p.Y) * 0.5 * height);
-            }
-
-            float len = 2.5f;
-            Point origin = Project(new Point3(0, 0, 0));
-
-            var px = Project(new Point3(len, 0, 0));
-            DrawCanvas.Children.Add(new Line { X1 = origin.X, Y1 = origin.Y, X2 = px.X, Y2 = px.Y, Stroke = Brushes.Red, StrokeThickness = 2 });
-
-            var py = Project(new Point3(0, len, 0));
-            DrawCanvas.Children.Add(new Line { X1 = origin.X, Y1 = origin.Y, X2 = py.X, Y2 = py.Y, Stroke = Brushes.Lime, StrokeThickness = 2 });
-
-            var pz = Project(new Point3(0, 0, len));
-            DrawCanvas.Children.Add(new Line { X1 = origin.X, Y1 = origin.Y, X2 = pz.X, Y2 = pz.Y, Stroke = Brushes.Blue, StrokeThickness = 2 });
         }
     }
 }

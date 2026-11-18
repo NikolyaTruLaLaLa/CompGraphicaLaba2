@@ -40,7 +40,7 @@ namespace LABA_6.Core.Factory
                     int p2 = next_i * profileCount + j + 1;
                     int p3 = next_i * profileCount + j;
 
-                    faces.Add(new Face(p0, p1, p2, p3));
+                    faces.Add(new Face(p3, p2, p1, p0));
                 }
             }
 

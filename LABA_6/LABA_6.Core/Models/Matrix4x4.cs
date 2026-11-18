@@ -154,5 +154,17 @@ namespace LABA_6.Core.Models
 
             return m;
         }
+
+        public static Point3 MultiplyWithW(Matrix4x4 m, Point3 p, out float w)
+        {
+            float x = m._m[0, 0] * p.X + m._m[0, 1] * p.Y + m._m[0, 2] * p.Z + m._m[0, 3];
+            float y = m._m[1, 0] * p.X + m._m[1, 1] * p.Y + m._m[1, 2] * p.Z + m._m[1, 3];
+            float z = m._m[2, 0] * p.X + m._m[2, 1] * p.Y + m._m[2, 2] * p.Z + m._m[2, 3];
+            w = m._m[3, 0] * p.X + m._m[3, 1] * p.Y + m._m[3, 2] * p.Z + m._m[3, 3];
+
+            if (MathF.Abs(w) > 1e-8f && MathF.Abs(w - 1f) > 1e-6f)
+                return new Point3(x / w, y / w, z / w);
+            return new Point3(x, y, z);
+        }
     }
 }
