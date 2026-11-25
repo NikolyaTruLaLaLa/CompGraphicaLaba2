@@ -10,7 +10,7 @@ namespace LABA_6.Core.Models
         public List<Point3> Vertices { get; }
         public List<Face> Faces { get; }
         public List<Point2> TexCoords { get; } = new();
-
+        public string? TexturePath { get; set; }
         public Mesh() { Vertices = new(); Faces = new(); }
         public Mesh(IEnumerable<Point3> vertices, IEnumerable<Face> faces)
         {

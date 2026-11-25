@@ -15,8 +15,6 @@ namespace LABA_6.Core.Rendering
 
             float aspect = (float)fb.Width / fb.Height;
             Matrix4x4 view = camera.GetViewMatrix();
-
-            // Для перспективы используем матрицу проекции, для аксонометрии - масштаб
             Matrix4x4 proj = isPerspective ? camera.GetProjectionMatrix(aspect) : Matrix4x4.Scale(0.4f, 0.4f, 0.4f);
             Matrix4x4 viewProj = proj * view;
 
@@ -27,31 +25,22 @@ namespace LABA_6.Core.Rendering
                 Matrix4x4 mvp = viewProj * modelMatrix;
 
                 var screenPoints = new Point3?[mesh.VertexCount];
-                var screenWs = new float[mesh.VertexCount]; // Массив для хранения W (глубины)
+                var screenWs = new float[mesh.VertexCount];
                 var worldPoints = new Point3[mesh.VertexCount];
 
-                // 1. Проецируем вершины
                 for (int i = 0; i < mesh.VertexCount; i++)
                 {
                     worldPoints[i] = modelMatrix * mesh.Vertices[i];
-
-                    // Используем MultiplyWithW, чтобы достать W
                     var v = Matrix4x4.MultiplyWithW(mvp, mesh.Vertices[i], out float w);
 
-                    if (w <= 0.001f || float.IsNaN(w))
-                    {
-                        screenPoints[i] = null;
-                        continue;
-                    }
+                    if (w <= 0.001f || float.IsNaN(w)) { screenPoints[i] = null; continue; }
 
                     float sx = (v.X + 1.0f) * 0.5f * fb.Width;
                     float sy = (1.0f - v.Y) * 0.5f * fb.Height;
-
                     screenPoints[i] = new Point3(sx, sy, v.Z);
-                    screenWs[i] = w; // Сохраняем W для каждой вершины
+                    screenWs[i] = w;
                 }
 
-                // 2. Рисуем грани
                 foreach (var face in mesh.Faces)
                 {
                     Point3 v0 = worldPoints[face.Indices[0]];
@@ -74,7 +63,6 @@ namespace LABA_6.Core.Rendering
 
                     renderedFaces++;
 
-                    // Заливка (с учетом текстуры)
                     for (int i = 1; i < face.Count - 1; i++)
                     {
                         var p1 = screenPoints[face.Indices[0]];
@@ -89,7 +77,6 @@ namespace LABA_6.Core.Rendering
                                 var uv2 = mesh.TexCoords[face.TexIndices[i]];
                                 var uv3 = mesh.TexCoords[face.TexIndices[i + 1]];
 
-                                // Передаем координаты, UV и W в растеризатор
                                 Rasterizer.DrawTriangleTextured(fb,
                                     p1.Value, uv1, screenWs[face.Indices[0]],
                                     p2.Value, uv2, screenWs[face.Indices[i]],
@@ -103,7 +90,8 @@ namespace LABA_6.Core.Rendering
                         }
                     }
 
-                    // Отрисовка ребер (Белым цветом)
+                    // ОТРИСОВКА РЕБЕР ОТКЛЮЧЕНА, ЧТОБЫ НЕ БЫЛО БЕЛЫХ ПЯТЕН
+                    /*
                     for (int i = 0; i < face.Count; i++)
                     {
                         var pa = screenPoints[face.Indices[i]];
@@ -115,8 +103,8 @@ namespace LABA_6.Core.Rendering
                                                     Rasterizer.ColorWhite);
                         }
                     }
+                    */
 
-                    // Отрисовка нормалей (Красным цветом)
                     if (showNormals)
                     {
                         Point3 center = Point3.Zero;

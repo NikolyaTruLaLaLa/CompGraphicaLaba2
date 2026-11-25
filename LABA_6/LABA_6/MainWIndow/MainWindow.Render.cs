@@ -75,7 +75,7 @@ namespace LABA_6.UI
                     sceneObjects.Add(new SceneObject(_mesh2, _modelMatrix2, unchecked((int)0xFFFF00FF)));
                 }
 
-                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling, customViewDir, showNormals, _testTexture, out int renderedFaces);
+                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling, customViewDir, showNormals, _currentTexture, out int renderedFaces);
 
                 _bitmap.Lock();
                 Marshal.Copy(_frameBuffer.Color, 0, _bitmap.BackBuffer, _frameBuffer.Color.Length);
