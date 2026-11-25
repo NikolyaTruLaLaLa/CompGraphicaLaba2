@@ -1,0 +1,12 @@
+# MTL file - created by a modified js OBJExporter
+
+newmtl aiprintgen_material_07d26a58-092c-4e07-9124-204b44391e66
+Tr 0.0000
+illum 1
+Pr 0.9
+Pds 1
+Pl 1
+Ka 1 1 1
+Kd 1 1 1
+Ke 0 0 0
+map_Kd aiprintgen_material_07d26a58-092c-4e07-9124-204b44391e66.png

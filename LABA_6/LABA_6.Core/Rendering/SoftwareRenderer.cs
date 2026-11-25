@@ -9,7 +9,7 @@ namespace LABA_6.Core.Rendering
         public static void Render(FrameBuffer fb, List<SceneObject> objects, Camera camera,
                                   bool isPerspective, bool doCulling, Point3 customViewDir,
                                   bool showNormals, Texture? texture, Light light,
-                                  bool useGouraud, int objectColor, out int renderedFaces)
+                                  ShadingMode shadingMode, int objectColor, out int renderedFaces)
         {
             renderedFaces = 0;
             fb.Clear(Rasterizer.ColorBlack);
@@ -25,7 +25,6 @@ namespace LABA_6.Core.Rendering
                 Matrix4x4 modelMatrix = obj.ModelMatrix;
                 Matrix4x4 mvp = viewProj * modelMatrix;
 
-                // Если в меше нет нормалей (например, для встроенных фигур), генерируем их
                 if (mesh.Normals.Count == 0)
                 {
                     CalculateVertexNormals(mesh);
@@ -34,10 +33,15 @@ namespace LABA_6.Core.Rendering
                 var screenPoints = new Point3?[mesh.VertexCount];
                 var screenWs = new float[mesh.VertexCount];
                 var worldPoints = new Point3[mesh.VertexCount];
+                var worldNormals = new Point3[mesh.VertexCount];
 
                 for (int i = 0; i < mesh.VertexCount; i++)
                 {
                     worldPoints[i] = modelMatrix * mesh.Vertices[i];
+
+                    var n = mesh.Normals[i];
+                    worldNormals[i] = (modelMatrix * new Point3(n.X, n.Y, n.Z)).Normalized();
+
                     var v = Matrix4x4.MultiplyWithW(mvp, mesh.Vertices[i], out float w);
 
                     if (w <= 0.001f || float.IsNaN(w)) { screenPoints[i] = null; continue; }
@@ -59,8 +63,7 @@ namespace LABA_6.Core.Rendering
                     {
                         if (isPerspective)
                         {
-                            Point3 viewVector = (camera.Position - v0).Normalized();
-                            if (Point3.Dot(faceNormal, viewVector) <= 0) continue;
+                            if (Point3.Dot(faceNormal, (camera.Position - v0).Normalized()) <= 0) continue;
                         }
                         else
                         {
@@ -70,25 +73,19 @@ namespace LABA_6.Core.Rendering
 
                     renderedFaces++;
 
-                    // Расчет освещения в вершинах (Gouraud)
                     float[] vertexIntensities = new float[face.Count];
                     int[] vertexColors = new int[face.Count];
 
-                    if (useGouraud)
+                    if (shadingMode == ShadingMode.Gouraud)
                     {
                         for (int i = 0; i < face.Count; i++)
                         {
                             int vIdx = face.Indices[i];
                             int nIdx = (face.NormalIndices != null && i < face.NormalIndices.Length) ? face.NormalIndices[i] : vIdx;
 
-                            Point3 normal = mesh.Normals[nIdx];
-                            Point3 vPos = worldPoints[vIdx];
-
-                            Point3 L = (light.Position - vPos).Normalized();
-                            float dot = Point3.Dot(normal, L);
-
-                            float intensity = light.Ambient + light.Intensity * Math.Max(0, dot);
-                            intensity = Math.Clamp(intensity, 0f, 1f);
+                            Point3 L = (light.Position - worldPoints[vIdx]).Normalized();
+                            float dot = Point3.Dot(worldNormals[nIdx], L);
+                            float intensity = Math.Clamp(light.Ambient + light.Intensity * Math.Max(0, dot), 0f, 1f);
 
                             vertexIntensities[i] = intensity;
                             vertexColors[i] = ApplyIntensity(objectColor, intensity);
@@ -105,51 +102,73 @@ namespace LABA_6.Core.Rendering
                         {
                             bool hasTexture = texture != null && face.TexIndices != null && mesh.TexCoords.Count > 0;
 
-                            if (hasTexture)
+                            if (shadingMode == ShadingMode.Phong || shadingMode == ShadingMode.Toon)
+                            {
+                                // Берем нормали для текущих вершин грани
+                                int nIdx0 = (face.NormalIndices != null) ? face.NormalIndices[0] : face.Indices[0];
+                                int nIdx1 = (face.NormalIndices != null) ? face.NormalIndices[i] : face.Indices[i];
+                                int nIdx2 = (face.NormalIndices != null) ? face.NormalIndices[i + 1] : face.Indices[i + 1];
+
+                                if (hasTexture)
+                                {
+                                    // ИСПОЛЬЗУЕМ ТЕКСТУРНЫЙ ФОНГ/ТУН
+                                    var uv1 = mesh.TexCoords[face.TexIndices![0]];
+                                    var uv2 = mesh.TexCoords[face.TexIndices[i]];
+                                    var uv3 = mesh.TexCoords[face.TexIndices[i + 1]];
+
+                                    Rasterizer.DrawTriangleTexturedPhong(fb,
+                                        p1.Value, uv1, screenWs[face.Indices[0]], worldNormals[nIdx0], worldPoints[face.Indices[0]],
+                                        p2.Value, uv2, screenWs[face.Indices[i]], worldNormals[nIdx1], worldPoints[face.Indices[i]],
+                                        p3.Value, uv3, screenWs[face.Indices[i + 1]], worldNormals[nIdx2], worldPoints[face.Indices[i + 1]],
+                                        light.Position, light.Ambient, light.Intensity, texture!, shadingMode == ShadingMode.Toon);
+                                }
+                                else
+                                {
+                                    // ОБЫЧНЫЙ ФОНГ/ТУН БЕЗ ТЕКСТУРЫ
+                                    Rasterizer.DrawTrianglePhong(fb,
+                                        p1.Value, worldNormals[nIdx0], worldPoints[face.Indices[0]],
+                                        p2.Value, worldNormals[nIdx1], worldPoints[face.Indices[i]],
+                                        p3.Value, worldNormals[nIdx2], worldPoints[face.Indices[i + 1]],
+                                        light.Position, light.Ambient, light.Intensity,
+                                        objectColor, shadingMode == ShadingMode.Toon);
+                                }
+                            }
+                            else if (hasTexture)
                             {
                                 var uv1 = mesh.TexCoords[face.TexIndices![0]];
                                 var uv2 = mesh.TexCoords[face.TexIndices[i]];
                                 var uv3 = mesh.TexCoords[face.TexIndices[i + 1]];
 
-                                if (useGouraud)
+                                if (shadingMode == ShadingMode.Gouraud)
                                 {
-                                    // Комбинированный режим: Текстура + Свет
                                     Rasterizer.DrawTriangleTexturedGouraud(fb,
                                         p1.Value, uv1, screenWs[face.Indices[0]], vertexIntensities[0],
                                         p2.Value, uv2, screenWs[face.Indices[i]], vertexIntensities[i],
-                                        p3.Value, uv3, screenWs[face.Indices[i + 1]], vertexIntensities[i + 1],
-                                        texture!);
+                                        p3.Value, uv3, screenWs[face.Indices[i + 1]], vertexIntensities[i + 1], texture!);
                                 }
                                 else
                                 {
-                                    // Только текстура (свет выключен)
-                                    Rasterizer.DrawTriangleTextured(fb,
-                                        p1.Value, uv1, screenWs[face.Indices[0]],
-                                        p2.Value, uv2, screenWs[face.Indices[i]],
-                                        p3.Value, uv3, screenWs[face.Indices[i + 1]],
-                                        texture!);
+                                    Rasterizer.DrawTriangleTextured(fb, p1.Value, uv1, screenWs[face.Indices[0]],
+                                        p2.Value, uv2, screenWs[face.Indices[i]], p3.Value, uv3, screenWs[face.Indices[i + 1]], texture!);
                                 }
                             }
-                            else if (useGouraud)
+                            else if (shadingMode == ShadingMode.Gouraud)
                             {
-                                // Только свет (текстуры нет)
                                 Rasterizer.DrawTriangleGouraud(fb,
-                                    p1.Value, vertexColors[0],
-                                    p2.Value, vertexColors[i],
-                                    p3.Value, vertexColors[i + 1]);
+                                    p1.Value, vertexColors[0], p2.Value, vertexColors[i], p3.Value, vertexColors[i + 1]);
                             }
                             else
                             {
-                                // Сплошной цвет (ни света, ни текстуры)
                                 Rasterizer.DrawTriangle(fb, p1.Value, p2.Value, p3.Value, objectColor);
                             }
                         }
                     }
 
+                    // Отрисовка нормалей (Красным цветом)
                     if (showNormals)
                     {
                         Point3 center = Point3.Zero;
-                        for (int i = 0; i < face.Count; i++) center += worldPoints[face.Indices[i]];
+                        for (int j = 0; j < face.Count; j++) center += worldPoints[face.Indices[j]];
                         center /= face.Count;
 
                         Point3 normalEnd = center + faceNormal * 0.4f;
@@ -166,33 +185,22 @@ namespace LABA_6.Core.Rendering
                     }
                 }
             }
-
             DrawAxes(fb, viewProj);
         }
 
         private static void CalculateVertexNormals(Mesh mesh)
         {
             mesh.Normals.Clear();
-            for (int i = 0; i < mesh.VertexCount; i++)
-                mesh.Normals.Add(Point3.Zero);
-
+            for (int i = 0; i < mesh.VertexCount; i++) mesh.Normals.Add(Point3.Zero);
             foreach (var face in mesh.Faces)
             {
                 Point3 v0 = mesh.Vertices[face.Indices[0]];
                 Point3 v1 = mesh.Vertices[face.Indices[1]];
                 Point3 v2 = mesh.Vertices[face.Indices[2]];
-                Point3 faceNormal = Point3.Cross(v1 - v0, v2 - v0).Normalized();
-
-                foreach (var idx in face.Indices)
-                {
-                    mesh.Normals[idx] += faceNormal;
-                }
+                Point3 fn = Point3.Cross(v1 - v0, v2 - v0).Normalized();
+                foreach (var idx in face.Indices) mesh.Normals[idx] += fn;
             }
-
-            for (int i = 0; i < mesh.Normals.Count; i++)
-            {
-                mesh.Normals[i] = mesh.Normals[i].Normalized();
-            }
+            for (int i = 0; i < mesh.Normals.Count; i++) mesh.Normals[i] = mesh.Normals[i].Normalized();
         }
 
         private static int ApplyIntensity(int color, float intensity)
@@ -201,12 +209,7 @@ namespace LABA_6.Core.Rendering
             int r = (int)(((color >> 16) & 0xFF) * intensity);
             int g = (int)(((color >> 8) & 0xFF) * intensity);
             int b = (int)((color & 0xFF) * intensity);
-
-            r = Math.Clamp(r, 0, 255);
-            g = Math.Clamp(g, 0, 255);
-            b = Math.Clamp(b, 0, 255);
-
-            return (a << 24) | (r << 16) | (g << 8) | b;
+            return (a << 24) | (Math.Clamp(r, 0, 255) << 16) | (Math.Clamp(g, 0, 255) << 8) | Math.Clamp(b, 0, 255);
         }
 
         private static void DrawAxes(FrameBuffer fb, Matrix4x4 viewProj)
@@ -226,7 +229,6 @@ namespace LABA_6.Core.Rendering
         {
             var v = Matrix4x4.MultiplyWithW(mvp, p, out float w);
             if (w <= 0.001f || float.IsNaN(w)) return null;
-
             float sx = (v.X + 1.0f) * 0.5f * width;
             float sy = (1.0f - v.Y) * 0.5f * height;
             return new Point3(sx, sy, v.Z);

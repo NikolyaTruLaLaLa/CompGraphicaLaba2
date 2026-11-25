@@ -216,5 +216,137 @@ namespace LABA_6.Core.Rendering
             int b = (int)((c1 & 0xFF) * b0 + (c2 & 0xFF) * b1 + (c3 & 0xFF) * b2);
             return (a << 24) | (r << 16) | (g << 8) | b;
         }
+
+        // Вспомогательный метод для расчета цвета пикселя (Тун и Фонг)
+        private static int CalculatePhongColor(Point3 normal, Point3 lightPos, Point3 worldPos,
+                                               float ambient, float lightIntensity, int baseColor, bool isToon)
+        {
+            // Нормализуем интерполированную нормаль
+            normal = normal.Normalized();
+
+            // Вектор к свету
+            Point3 L = (lightPos - worldPos).Normalized();
+
+            float dot = Point3.Dot(normal, L);
+            float intensity = ambient + lightIntensity * Math.Max(0, dot);
+            intensity = Math.Clamp(intensity, 0f, 1f);
+
+            // Если это Toon-шейдинг, делаем свет ступенчатым
+            if (isToon)
+            {
+                // Округляем до 3 ступеней (0.33, 0.66, 1.0)
+                intensity = (float)Math.Round(intensity * 3f) / 3f;
+            }
+
+            int a = (baseColor >> 24) & 0xFF;
+            int r = (int)(((baseColor >> 16) & 0xFF) * intensity);
+            int g = (int)(((baseColor >> 8) & 0xFF) * intensity);
+            int b = (int)((baseColor & 0xFF) * intensity);
+
+            return (a << 24) | (Math.Clamp(r, 0, 255) << 16) | (Math.Clamp(g, 0, 255) << 8) | Math.Clamp(b, 0, 255);
+        }
+
+        public static void DrawTrianglePhong(FrameBuffer fb,
+            Point3 v1, Point3 n1, Point3 w1,
+            Point3 v2, Point3 n2, Point3 w2,
+            Point3 v3, Point3 n3, Point3 w3,
+            Point3 lightPos, float ambient, float lightInt, int color, bool isToon)
+        {
+            int minX = (int)Math.Max(0, Math.Floor(Math.Min(v1.X, Math.Min(v2.X, v3.X))));
+            int maxX = (int)Math.Min(fb.Width - 1, Math.Ceiling(Math.Max(v1.X, Math.Max(v2.X, v3.X))));
+            int minY = (int)Math.Max(0, Math.Floor(Math.Min(v1.Y, Math.Min(v2.Y, v3.Y))));
+            int maxY = (int)Math.Min(fb.Height - 1, Math.Ceiling(Math.Max(v1.Y, Math.Max(v2.Y, v3.Y))));
+
+            float area = EdgeFunction(v1, v2, v3);
+            if (area == 0) return;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    var p = new Point3(x + 0.5f, y + 0.5f, 0);
+                    float b0 = EdgeFunction(v2, v3, p) / area;
+                    float b1 = EdgeFunction(v3, v1, p) / area;
+                    float b2 = EdgeFunction(v1, v2, p) / area;
+
+                    if (b0 >= 0 && b1 >= 0 && b2 >= 0) // Убрал проверку <=0 для простоты, так как нормали обычно обходятся CCW
+                    {
+                        float z = b0 * v1.Z + b1 * v2.Z + b2 * v3.Z;
+
+                        // Интерполируем нормали и мировые координаты
+                        Point3 interpNormal = n1 * b0 + n2 * b1 + n3 * b2;
+                        Point3 interpWorld = w1 * b0 + w2 * b1 + w3 * b2;
+
+                        int finalColor = CalculatePhongColor(interpNormal, lightPos, interpWorld, ambient, lightInt, color, isToon);
+                        fb.SetPixel(x, y, z, finalColor);
+                    }
+                }
+            }
+        }
+
+        public static void DrawTriangleTexturedPhong(FrameBuffer fb,
+                                        Point3 v1, Point2 uv1, float w1, Point3 n1, Point3 wp1,
+                                        Point3 v2, Point2 uv2, float w2, Point3 n2, Point3 wp2,
+                                        Point3 v3, Point2 uv3, float w3, Point3 n3, Point3 wp3,
+                                        Point3 lightPos, float ambient, float lightInt,
+                                        Texture texture, bool isToon)
+        {
+            int minX = (int)Math.Max(0, Math.Floor(Math.Min(v1.X, Math.Min(v2.X, v3.X))));
+            int maxX = (int)Math.Min(fb.Width - 1, Math.Ceiling(Math.Max(v1.X, Math.Max(v2.X, v3.X))));
+            int minY = (int)Math.Max(0, Math.Floor(Math.Min(v1.Y, Math.Min(v2.Y, v3.Y))));
+            int maxY = (int)Math.Min(fb.Height - 1, Math.Ceiling(Math.Max(v1.Y, Math.Max(v2.Y, v3.Y))));
+
+            float area = EdgeFunction(v1, v2, v3);
+            if (area == 0) return;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    var p = new Point3(x + 0.5f, y + 0.5f, 0);
+                    float w0_raw = EdgeFunction(v2, v3, p);
+                    float w1_raw = EdgeFunction(v3, v1, p);
+                    float w2_raw = EdgeFunction(v1, v2, p);
+
+                    if ((w0_raw >= 0 && w1_raw >= 0 && w2_raw >= 0) || (w0_raw <= 0 && w1_raw <= 0 && w2_raw <= 0))
+                    {
+                        float b0 = w0_raw / area;
+                        float b1 = w1_raw / area;
+                        float b2 = w2_raw / area;
+
+                        float z = b0 * v1.Z + b1 * v2.Z + b2 * v3.Z;
+
+                        // Перспективно-корректная интерполяция UV
+                        float invW = b0 * (1f / w1) + b1 * (1f / w2) + b2 * (1f / w3);
+                        float u = (b0 * (uv1.X / w1) + b1 * (uv2.X / w2) + b2 * (uv3.X / w3)) / invW;
+                        float v = (b0 * (uv1.Y / w1) + b1 * (uv2.Y / w2) + b2 * (uv3.Y / w3)) / invW;
+
+                        // Интерполяция нормали и мировой позиции
+                        Point3 interpNormal = (n1 * b0 + n2 * b1 + n3 * b2).Normalized();
+                        Point3 interpWorld = wp1 * b0 + wp2 * b1 + wp3 * b2;
+
+                        // Расчет освещения
+                        Point3 L = (lightPos - interpWorld).Normalized();
+                        float dot = Point3.Dot(interpNormal, L);
+                        float intensity = Math.Clamp(ambient + lightInt * Math.Max(0, dot), 0f, 1f);
+
+                        if (isToon)
+                        {
+                            intensity = (float)Math.Round(intensity * 3f) / 3f; // 3 ступени
+                        }
+
+                        // Берем цвет из текстуры и умножаем на свет
+                        int texColor = texture.Sample(u, v);
+                        int a = (texColor >> 24) & 0xFF;
+                        int r = (int)(((texColor >> 16) & 0xFF) * intensity);
+                        int g = (int)(((texColor >> 8) & 0xFF) * intensity);
+                        int b = (int)((texColor & 0xFF) * intensity);
+
+                        int finalColor = (a << 24) | (Math.Clamp(r, 0, 255) << 16) | (Math.Clamp(g, 0, 255) << 8) | Math.Clamp(b, 0, 255);
+                        fb.SetPixel(x, y, z, finalColor);
+                    }
+                }
+            }
+        }
     }
 }

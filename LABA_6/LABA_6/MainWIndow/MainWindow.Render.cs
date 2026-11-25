@@ -65,6 +65,21 @@ namespace LABA_6.UI
 
                 Point3 customViewDir = new Point3(GetFloat(ViewXBox, 0f), GetFloat(ViewYBox, 0f), GetFloat(ViewZBox, -1f)).Normalized();
 
+                // Читаем режим освещения из ComboBox
+                ShadingMode shadingMode = ShadingComboBox.SelectedIndex switch
+                {
+                    0 => ShadingMode.None,
+                    1 => ShadingMode.Gouraud,
+                    2 => ShadingMode.Phong,
+                    3 => ShadingMode.Toon,
+                    _ => ShadingMode.None
+                };
+
+                // Позиция света
+                Point3 lightPos = new Point3(GetFloat(LightXBox, 2f), GetFloat(LightYBox, 3f), GetFloat(LightZBox, 2f));
+                Light light = new Light(lightPos);
+
+                // Формируем сцену
                 var sceneObjects = new System.Collections.Generic.List<SceneObject>
                 {
                     new SceneObject(_mesh, _modelMatrix, Rasterizer.ColorCyan)
@@ -75,13 +90,11 @@ namespace LABA_6.UI
                     sceneObjects.Add(new SceneObject(_mesh2, _modelMatrix2, unchecked((int)0xFFFF00FF)));
                 }
 
-                Point3 lightPos = new Point3(GetFloat(LightXBox, 2f), GetFloat(LightYBox, 3f), GetFloat(LightZBox, 2f));
-                Light light = new Light(lightPos);
-                bool useGouraud = GouraudCheckBox.IsChecked == true;
-                int objColor = Rasterizer.ColorCyan;
-
+                // Вызываем рендерер с новыми параметрами
                 SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling,
-                                        customViewDir, showNormals, _currentTexture, light, useGouraud, objColor, out int renderedFaces);
+                                        customViewDir, showNormals, _currentTexture, light, shadingMode, Rasterizer.ColorCyan, out int renderedFaces);
+
+                // Выводим на экран
                 _bitmap.Lock();
                 Marshal.Copy(_frameBuffer.Color, 0, _bitmap.BackBuffer, _frameBuffer.Color.Length);
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, w, h));
