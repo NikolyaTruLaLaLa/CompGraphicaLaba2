@@ -8,7 +8,8 @@ namespace LABA_6.Core.Rendering
     {
         public static void Render(FrameBuffer fb, List<SceneObject> objects, Camera camera,
                                   bool isPerspective, bool doCulling, Point3 customViewDir,
-                                  bool showNormals, Texture texture, out int renderedFaces)
+                                  bool showNormals, Texture? texture, Light light,
+                                  bool useGouraud, int objectColor, out int renderedFaces)
         {
             renderedFaces = 0;
             fb.Clear(Rasterizer.ColorBlack);
@@ -23,6 +24,12 @@ namespace LABA_6.Core.Rendering
                 Mesh mesh = obj.Mesh;
                 Matrix4x4 modelMatrix = obj.ModelMatrix;
                 Matrix4x4 mvp = viewProj * modelMatrix;
+
+                // Если в меше нет нормалей (например, для встроенных фигур), генерируем их
+                if (mesh.Normals.Count == 0)
+                {
+                    CalculateVertexNormals(mesh);
+                }
 
                 var screenPoints = new Point3?[mesh.VertexCount];
                 var screenWs = new float[mesh.VertexCount];
@@ -46,22 +53,47 @@ namespace LABA_6.Core.Rendering
                     Point3 v0 = worldPoints[face.Indices[0]];
                     Point3 v1 = worldPoints[face.Indices[1]];
                     Point3 v2 = worldPoints[face.Indices[2]];
-                    Point3 normal = Point3.Cross(v1 - v0, v2 - v0).Normalized();
+                    Point3 faceNormal = Point3.Cross(v1 - v0, v2 - v0).Normalized();
 
                     if (doCulling)
                     {
                         if (isPerspective)
                         {
                             Point3 viewVector = (camera.Position - v0).Normalized();
-                            if (Point3.Dot(normal, viewVector) <= 0) continue;
+                            if (Point3.Dot(faceNormal, viewVector) <= 0) continue;
                         }
                         else
                         {
-                            if (Point3.Dot(normal, -customViewDir) <= 0) continue;
+                            if (Point3.Dot(faceNormal, -customViewDir) <= 0) continue;
                         }
                     }
 
                     renderedFaces++;
+
+                    // Расчет освещения в вершинах (Gouraud)
+                    float[] vertexIntensities = new float[face.Count];
+                    int[] vertexColors = new int[face.Count];
+
+                    if (useGouraud)
+                    {
+                        for (int i = 0; i < face.Count; i++)
+                        {
+                            int vIdx = face.Indices[i];
+                            int nIdx = (face.NormalIndices != null && i < face.NormalIndices.Length) ? face.NormalIndices[i] : vIdx;
+
+                            Point3 normal = mesh.Normals[nIdx];
+                            Point3 vPos = worldPoints[vIdx];
+
+                            Point3 L = (light.Position - vPos).Normalized();
+                            float dot = Point3.Dot(normal, L);
+
+                            float intensity = light.Ambient + light.Intensity * Math.Max(0, dot);
+                            intensity = Math.Clamp(intensity, 0f, 1f);
+
+                            vertexIntensities[i] = intensity;
+                            vertexColors[i] = ApplyIntensity(objectColor, intensity);
+                        }
+                    }
 
                     for (int i = 1; i < face.Count - 1; i++)
                     {
@@ -71,39 +103,48 @@ namespace LABA_6.Core.Rendering
 
                         if (p1 != null && p2 != null && p3 != null)
                         {
-                            if (texture != null && face.TexIndices != null && mesh.TexCoords.Count > 0)
+                            bool hasTexture = texture != null && face.TexIndices != null && mesh.TexCoords.Count > 0;
+
+                            if (hasTexture)
                             {
-                                var uv1 = mesh.TexCoords[face.TexIndices[0]];
+                                var uv1 = mesh.TexCoords[face.TexIndices![0]];
                                 var uv2 = mesh.TexCoords[face.TexIndices[i]];
                                 var uv3 = mesh.TexCoords[face.TexIndices[i + 1]];
 
-                                Rasterizer.DrawTriangleTextured(fb,
-                                    p1.Value, uv1, screenWs[face.Indices[0]],
-                                    p2.Value, uv2, screenWs[face.Indices[i]],
-                                    p3.Value, uv3, screenWs[face.Indices[i + 1]],
-                                    texture);
+                                if (useGouraud)
+                                {
+                                    // Комбинированный режим: Текстура + Свет
+                                    Rasterizer.DrawTriangleTexturedGouraud(fb,
+                                        p1.Value, uv1, screenWs[face.Indices[0]], vertexIntensities[0],
+                                        p2.Value, uv2, screenWs[face.Indices[i]], vertexIntensities[i],
+                                        p3.Value, uv3, screenWs[face.Indices[i + 1]], vertexIntensities[i + 1],
+                                        texture!);
+                                }
+                                else
+                                {
+                                    // Только текстура (свет выключен)
+                                    Rasterizer.DrawTriangleTextured(fb,
+                                        p1.Value, uv1, screenWs[face.Indices[0]],
+                                        p2.Value, uv2, screenWs[face.Indices[i]],
+                                        p3.Value, uv3, screenWs[face.Indices[i + 1]],
+                                        texture!);
+                                }
+                            }
+                            else if (useGouraud)
+                            {
+                                // Только свет (текстуры нет)
+                                Rasterizer.DrawTriangleGouraud(fb,
+                                    p1.Value, vertexColors[0],
+                                    p2.Value, vertexColors[i],
+                                    p3.Value, vertexColors[i + 1]);
                             }
                             else
                             {
-                                Rasterizer.DrawTriangle(fb, p1.Value, p2.Value, p3.Value, obj.Color);
+                                // Сплошной цвет (ни света, ни текстуры)
+                                Rasterizer.DrawTriangle(fb, p1.Value, p2.Value, p3.Value, objectColor);
                             }
                         }
                     }
-
-                    // ОТРИСОВКА РЕБЕР ОТКЛЮЧЕНА, ЧТОБЫ НЕ БЫЛО БЕЛЫХ ПЯТЕН
-                    /*
-                    for (int i = 0; i < face.Count; i++)
-                    {
-                        var pa = screenPoints[face.Indices[i]];
-                        var pb = screenPoints[face.Indices[(i + 1) % face.Count]];
-                        if (pa != null && pb != null)
-                        {
-                            Rasterizer.DrawLine(fb, (int)pa.Value.X, (int)pa.Value.Y, pa.Value.Z - 0.001f,
-                                                    (int)pb.Value.X, (int)pb.Value.Y, pb.Value.Z - 0.001f,
-                                                    Rasterizer.ColorWhite);
-                        }
-                    }
-                    */
 
                     if (showNormals)
                     {
@@ -111,7 +152,7 @@ namespace LABA_6.Core.Rendering
                         for (int i = 0; i < face.Count; i++) center += worldPoints[face.Indices[i]];
                         center /= face.Count;
 
-                        Point3 normalEnd = center + normal * 0.4f;
+                        Point3 normalEnd = center + faceNormal * 0.4f;
 
                         var screenCenter = ProjectPoint(center, viewProj, fb.Width, fb.Height);
                         var screenNormal = ProjectPoint(normalEnd, viewProj, fb.Width, fb.Height);
@@ -127,6 +168,45 @@ namespace LABA_6.Core.Rendering
             }
 
             DrawAxes(fb, viewProj);
+        }
+
+        private static void CalculateVertexNormals(Mesh mesh)
+        {
+            mesh.Normals.Clear();
+            for (int i = 0; i < mesh.VertexCount; i++)
+                mesh.Normals.Add(Point3.Zero);
+
+            foreach (var face in mesh.Faces)
+            {
+                Point3 v0 = mesh.Vertices[face.Indices[0]];
+                Point3 v1 = mesh.Vertices[face.Indices[1]];
+                Point3 v2 = mesh.Vertices[face.Indices[2]];
+                Point3 faceNormal = Point3.Cross(v1 - v0, v2 - v0).Normalized();
+
+                foreach (var idx in face.Indices)
+                {
+                    mesh.Normals[idx] += faceNormal;
+                }
+            }
+
+            for (int i = 0; i < mesh.Normals.Count; i++)
+            {
+                mesh.Normals[i] = mesh.Normals[i].Normalized();
+            }
+        }
+
+        private static int ApplyIntensity(int color, float intensity)
+        {
+            int a = (color >> 24) & 0xFF;
+            int r = (int)(((color >> 16) & 0xFF) * intensity);
+            int g = (int)(((color >> 8) & 0xFF) * intensity);
+            int b = (int)((color & 0xFF) * intensity);
+
+            r = Math.Clamp(r, 0, 255);
+            g = Math.Clamp(g, 0, 255);
+            b = Math.Clamp(b, 0, 255);
+
+            return (a << 24) | (r << 16) | (g << 8) | b;
         }
 
         private static void DrawAxes(FrameBuffer fb, Matrix4x4 viewProj)

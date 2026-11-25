@@ -11,6 +11,7 @@ namespace LABA_6.Core.Models
         public List<Face> Faces { get; }
         public List<Point2> TexCoords { get; } = new();
         public string? TexturePath { get; set; }
+        public List<Point3> Normals { get; } = new();
         public Mesh() { Vertices = new(); Faces = new(); }
         public Mesh(IEnumerable<Point3> vertices, IEnumerable<Face> faces)
         {

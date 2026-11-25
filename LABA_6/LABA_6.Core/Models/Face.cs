@@ -10,6 +10,7 @@ namespace LABA_6.Core.Models
     {
         public int[] Indices { get; }
         public int[]? TexIndices { get; }
+        public int[]? NormalIndices { get; }
 
         // Конструктор для обычных граней (как было раньше)
         public Face(params int[] indices)
@@ -21,12 +22,13 @@ namespace LABA_6.Core.Models
         }
 
         // Конструктор для граней с текстурами
-        public Face(int[] indices, int[] texIndices)
+        public Face(int[] indices, int[] texIndices, int[]? normalIndices = null)
         {
             if (indices == null || indices.Length < 3)
                 throw new ArgumentException("Грань должна содержать минимум 3 вершины");
             Indices = (int[])indices.Clone();
             TexIndices = texIndices != null ? (int[])texIndices.Clone() : null;
+            NormalIndices = normalIndices;
         }
 
         public int Count => Indices.Length;

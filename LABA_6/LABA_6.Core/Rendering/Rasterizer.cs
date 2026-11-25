@@ -112,9 +112,109 @@ namespace LABA_6.Core.Rendering
                 }
             }
         }
+
+        public static void DrawTriangleTexturedGouraud(FrameBuffer fb,
+                                        Point3 v1, Point2 uv1, float w1, float i1,
+                                        Point3 v2, Point2 uv2, float w2, float i2,
+                                        Point3 v3, Point2 uv3, float w3, float i3,
+                                        Texture texture)
+        {
+            int minX = (int)Math.Max(0, Math.Floor(Math.Min(v1.X, Math.Min(v2.X, v3.X))));
+            int maxX = (int)Math.Min(fb.Width - 1, Math.Ceiling(Math.Max(v1.X, Math.Max(v2.X, v3.X))));
+            int minY = (int)Math.Max(0, Math.Floor(Math.Min(v1.Y, Math.Min(v2.Y, v3.Y))));
+            int maxY = (int)Math.Min(fb.Height - 1, Math.Ceiling(Math.Max(v1.Y, Math.Max(v2.Y, v3.Y))));
+
+            float area = EdgeFunction(v1, v2, v3);
+            if (area == 0) return;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    var p = new Point3(x + 0.5f, y + 0.5f, 0);
+                    float w0_raw = EdgeFunction(v2, v3, p);
+                    float w1_raw = EdgeFunction(v3, v1, p);
+                    float w2_raw = EdgeFunction(v1, v2, p);
+
+                    if ((w0_raw >= 0 && w1_raw >= 0 && w2_raw >= 0) || (w0_raw <= 0 && w1_raw <= 0 && w2_raw <= 0))
+                    {
+                        float b0 = w0_raw / area;
+                        float b1 = w1_raw / area;
+                        float b2 = w2_raw / area;
+
+                        float z = b0 * v1.Z + b1 * v2.Z + b2 * v3.Z;
+
+                        // Перспективно-корректная интерполяция UV
+                        float invW = b0 * (1f / w1) + b1 * (1f / w2) + b2 * (1f / w3);
+                        float u = (b0 * (uv1.X / w1) + b1 * (uv2.X / w2) + b2 * (uv3.X / w3)) / invW;
+                        float v = (b0 * (uv1.Y / w1) + b1 * (uv2.Y / w2) + b2 * (uv3.Y / w3)) / invW;
+
+                        // Интерполируем интенсивность света
+                        float intensity = b0 * i1 + b1 * i2 + b2 * i3;
+
+                        int textureColor = texture.Sample(u, v);
+
+                        // Умножаем цвет текстуры на свет
+                        int a = (textureColor >> 24) & 0xFF;
+                        int r = (int)(((textureColor >> 16) & 0xFF) * intensity);
+                        int g = (int)(((textureColor >> 8) & 0xFF) * intensity);
+                        int b = (int)((textureColor & 0xFF) * intensity);
+
+                        r = Math.Clamp(r, 0, 255);
+                        g = Math.Clamp(g, 0, 255);
+                        b = Math.Clamp(b, 0, 255);
+
+                        int finalColor = (a << 24) | (r << 16) | (g << 8) | b;
+                        fb.SetPixel(x, y, z, finalColor);
+                    }
+                }
+            }
+        }
+        public static void DrawTriangleGouraud(FrameBuffer fb,
+            Point3 v1, int c1, Point3 v2, int c2, Point3 v3, int c3)
+        {
+            // ... (стандартные проверки Bounding Box и EdgeFunction) ...
+            int minX = (int)Math.Max(0, Math.Floor(Math.Min(v1.X, Math.Min(v2.X, v3.X))));
+            int maxX = (int)Math.Min(fb.Width - 1, Math.Ceiling(Math.Max(v1.X, Math.Max(v2.X, v3.X))));
+            int minY = (int)Math.Max(0, Math.Floor(Math.Min(v1.Y, Math.Min(v2.Y, v3.Y))));
+            int maxY = (int)Math.Min(fb.Height - 1, Math.Ceiling(Math.Max(v1.Y, Math.Max(v2.Y, v3.Y))));
+
+            float area = EdgeFunction(v1, v2, v3);
+            if (area == 0) return;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    var p = new Point3(x + 0.5f, y + 0.5f, 0);
+                    float w0 = EdgeFunction(v2, v3, p);
+                    float w1 = EdgeFunction(v3, v1, p);
+                    float w2 = EdgeFunction(v1, v2, p);
+
+                    if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0))
+                    {
+                        w0 /= area; w1 /= area; w2 /= area;
+                        float z = w0 * v1.Z + w1 * v2.Z + w2 * v3.Z;
+
+                        // Интерполируем цвет
+                        int color = InterpolateColor(c1, c2, c3, w0, w1, w2);
+                        fb.SetPixel(x, y, z, color);
+                    }
+                }
+            }
+        }
         private static float EdgeFunction(Point3 a, Point3 b, Point3 c)
         {
             return (c.X - a.X) * (b.Y - a.Y) - (c.Y - a.Y) * (b.X - a.X);
+        }
+
+        private static int InterpolateColor(int c1, int c2, int c3, float b0, float b1, float b2)
+        {
+            int a = (int)(((c1 >> 24) & 0xFF) * b0 + ((c2 >> 24) & 0xFF) * b1 + ((c3 >> 24) & 0xFF) * b2);
+            int r = (int)(((c1 >> 16) & 0xFF) * b0 + ((c2 >> 16) & 0xFF) * b1 + ((c3 >> 16) & 0xFF) * b2);
+            int g = (int)(((c1 >> 8) & 0xFF) * b0 + ((c2 >> 8) & 0xFF) * b1 + ((c3 >> 8) & 0xFF) * b2);
+            int b = (int)((c1 & 0xFF) * b0 + (c2 & 0xFF) * b1 + (c3 & 0xFF) * b2);
+            return (a << 24) | (r << 16) | (g << 8) | b;
         }
     }
 }

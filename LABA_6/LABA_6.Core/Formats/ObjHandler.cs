@@ -14,6 +14,7 @@ namespace LABA_6.Core.Formats
             var vertices = new List<Point3>();
             var texCoords = new List<Point2>();
             var faces = new List<Face>();
+            var normals = new List<Point3>();
 
             var culture = CultureInfo.InvariantCulture;
             string? mtlFileName = null;
@@ -46,6 +47,7 @@ namespace LABA_6.Core.Formats
                 {
                     var faceIndices = new List<int>();
                     var faceTexIndices = new List<int>();
+                    var faceNormalIndices = new List<int>();
 
                     for (int i = 1; i < parts.Length; i++)
                     {
@@ -54,18 +56,30 @@ namespace LABA_6.Core.Formats
 
                         if (indices.Length > 1 && !string.IsNullOrEmpty(indices[1]))
                             faceTexIndices.Add(int.Parse(indices[1]) - 1);
+
+                        if (indices.Length > 2 && !string.IsNullOrEmpty(indices[2]))
+                            faceNormalIndices.Add(int.Parse(indices[2]) - 1);
                     }
 
                     if (faceIndices.Count >= 3)
                     {
                         var texIdxArray = faceTexIndices.Count == faceIndices.Count ? faceTexIndices.ToArray() : null;
-                        faces.Add(new Face(faceIndices.ToArray(), texIdxArray!));
+                        var normIdxArray = faceNormalIndices.Count == faceIndices.Count ? faceNormalIndices.ToArray() : null;
+                        faces.Add(new Face(faceIndices.ToArray(), texIdxArray, normIdxArray));
                     }
+                }
+                else if (parts[0] == "vn")
+                {
+                    float x = float.Parse(parts[1], culture);
+                    float y = float.Parse(parts[2], culture);
+                    float z = float.Parse(parts[3], culture);
+                    normals.Add(new Point3(x, y, z));
                 }
             }
 
             var mesh = new Mesh(vertices, faces);
             mesh.TexCoords.AddRange(texCoords);
+            mesh.Normals.AddRange(normals);
 
             if (mtlFileName != null)
             {

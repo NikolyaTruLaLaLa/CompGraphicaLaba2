@@ -75,8 +75,13 @@ namespace LABA_6.UI
                     sceneObjects.Add(new SceneObject(_mesh2, _modelMatrix2, unchecked((int)0xFFFF00FF)));
                 }
 
-                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling, customViewDir, showNormals, _currentTexture, out int renderedFaces);
+                Point3 lightPos = new Point3(GetFloat(LightXBox, 2f), GetFloat(LightYBox, 3f), GetFloat(LightZBox, 2f));
+                Light light = new Light(lightPos);
+                bool useGouraud = GouraudCheckBox.IsChecked == true;
+                int objColor = Rasterizer.ColorCyan;
 
+                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling,
+                                        customViewDir, showNormals, _currentTexture, light, useGouraud, objColor, out int renderedFaces);
                 _bitmap.Lock();
                 Marshal.Copy(_frameBuffer.Color, 0, _bitmap.BackBuffer, _frameBuffer.Color.Length);
                 _bitmap.AddDirtyRect(new Int32Rect(0, 0, w, h));
