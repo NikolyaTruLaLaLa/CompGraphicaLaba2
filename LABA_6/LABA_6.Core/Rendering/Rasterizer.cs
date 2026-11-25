@@ -70,10 +70,10 @@ namespace LABA_6.Core.Rendering
 
 
         public static void DrawTriangleTextured(FrameBuffer fb,
-                                                Point3 v1, Point2 uv1,
-                                                Point3 v2, Point2 uv2,
-                                                Point3 v3, Point2 uv3,
-                                                Texture texture)
+                                        Point3 v1, Point2 uv1, float w1,
+                                        Point3 v2, Point2 uv2, float w2,
+                                        Point3 v3, Point2 uv3, float w3,
+                                        Texture texture)
         {
             int minX = (int)Math.Max(0, Math.Floor(Math.Min(v1.X, Math.Min(v2.X, v3.X))));
             int maxX = (int)Math.Min(fb.Width - 1, Math.Ceiling(Math.Max(v1.X, Math.Max(v2.X, v3.X))));
@@ -88,19 +88,23 @@ namespace LABA_6.Core.Rendering
                 for (int y = minY; y <= maxY; y++)
                 {
                     var p = new Point3(x + 0.5f, y + 0.5f, 0);
-                    float w0 = EdgeFunction(v2, v3, p);
-                    float w1 = EdgeFunction(v3, v1, p);
-                    float w2 = EdgeFunction(v1, v2, p);
+                    float w0_raw = EdgeFunction(v2, v3, p);
+                    float w1_raw = EdgeFunction(v3, v1, p);
+                    float w2_raw = EdgeFunction(v1, v2, p);
 
-                    if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0))
+                    if ((w0_raw >= 0 && w1_raw >= 0 && w2_raw >= 0) || (w0_raw <= 0 && w1_raw <= 0 && w2_raw <= 0))
                     {
-                        w0 /= area; w1 /= area; w2 /= area;
+                        float b0 = w0_raw / area;
+                        float b1 = w1_raw / area;
+                        float b2 = w2_raw / area;
 
-                        float z = w0 * v1.Z + w1 * v2.Z + w2 * v3.Z;
+                        float z = b0 * v1.Z + b1 * v2.Z + b2 * v3.Z;
 
-                        // ИНТЕРПОЛЯЦИЯ ТЕКСТУРНЫХ КООРДИНАТ
-                        float u = w0 * uv1.X + w1 * uv2.X + w2 * uv3.X;
-                        float v = w0 * uv1.Y + w1 * uv2.Y + w2 * uv3.Y;
+                        // ПЕРСПЕКТИВНО-КОРРЕКТНАЯ ИНТЕРПОЛЯЦИЯ
+                        float invW = b0 * (1f / w1) + b1 * (1f / w2) + b2 * (1f / w3);
+
+                        float u = (b0 * (uv1.X / w1) + b1 * (uv2.X / w2) + b2 * (uv3.X / w3)) / invW;
+                        float v = (b0 * (uv1.Y / w1) + b1 * (uv2.Y / w2) + b2 * (uv3.Y / w3)) / invW;
 
                         int color = texture.Sample(u, v);
                         fb.SetPixel(x, y, z, color);
