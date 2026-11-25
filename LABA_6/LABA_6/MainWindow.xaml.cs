@@ -20,6 +20,8 @@ namespace LABA_6.UI
         private Matrix4x4 _modelMatrix2 = Matrix4x4.Identity;
         private readonly Camera _camera;
 
+        private Texture _testTexture = null!;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -29,6 +31,8 @@ namespace LABA_6.UI
                 target: new Point3(0, 0, 0),
                 up: new Point3(0, 1, 0)
             );
+
+            _testTexture = CreateCheckerboardTexture();
 
             LoadPolyhedron(PolyhedronFactory.CreateTetrahedron());
         }
@@ -41,6 +45,26 @@ namespace LABA_6.UI
             if (float.TryParse(tb.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out float res))
                 return res;
             return defaultVal;
+        }
+
+
+        private Texture CreateCheckerboardTexture()
+        {
+            int size = 256;
+            int[] pixels = new int[size * size];
+            int color1 = unchecked((int)0xFFFFFFFF); // Белый
+            int color2 = unchecked((int)0xFF000000); // Черный
+
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    int blockSize = 32;
+                    bool isColor1 = ((x / blockSize) + (y / blockSize)) % 2 == 0;
+                    pixels[y * size + x] = isColor1 ? color1 : color2;
+                }
+            }
+            return new Texture(size, size, pixels);
         }
     }
 }

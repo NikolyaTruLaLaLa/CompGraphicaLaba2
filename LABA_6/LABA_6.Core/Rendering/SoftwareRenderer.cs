@@ -8,7 +8,7 @@ namespace LABA_6.Core.Rendering
     {
         public static void Render(FrameBuffer fb, List<SceneObject> objects, Camera camera,
                                   bool isPerspective, bool doCulling, Point3 customViewDir,
-                                  bool showNormals, out int renderedFaces)
+                                  bool showNormals, Texture texture, out int renderedFaces)
         {
             renderedFaces = 0;
             fb.Clear(Rasterizer.ColorBlack);
@@ -61,7 +61,7 @@ namespace LABA_6.Core.Rendering
 
                     renderedFaces++;
 
-                    // Заливка (используем цвет объекта)
+                    // Заливка (с учетом текстуры)
                     for (int i = 1; i < face.Count - 1; i++)
                     {
                         var p1 = screenPoints[face.Indices[0]];
@@ -69,7 +69,22 @@ namespace LABA_6.Core.Rendering
                         var p3 = screenPoints[face.Indices[i + 1]];
 
                         if (p1 != null && p2 != null && p3 != null)
-                            Rasterizer.DrawTriangle(fb, p1.Value, p2.Value, p3.Value, obj.Color);
+                        {
+                            // Если есть текстура и UV-индексы - рисуем текстуру
+                            if (texture != null && face.TexIndices != null && mesh.TexCoords.Count > 0)
+                            {
+                                var uv1 = mesh.TexCoords[face.TexIndices[0]];
+                                var uv2 = mesh.TexCoords[face.TexIndices[i]];
+                                var uv3 = mesh.TexCoords[face.TexIndices[i + 1]];
+
+                                Rasterizer.DrawTriangleTextured(fb, p1.Value, uv1, p2.Value, uv2, p3.Value, uv3, texture);
+                            }
+                            else
+                            {
+                                // Иначе - сплошной цвет
+                                Rasterizer.DrawTriangle(fb, p1.Value, p2.Value, p3.Value, obj.Color);
+                            }
+                        }
                     }
 
                     // Ребра (белые)

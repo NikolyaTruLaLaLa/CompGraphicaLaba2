@@ -67,6 +67,47 @@ namespace LABA_6.Core.Rendering
                 }
             }
         }
+
+
+        public static void DrawTriangleTextured(FrameBuffer fb,
+                                                Point3 v1, Point2 uv1,
+                                                Point3 v2, Point2 uv2,
+                                                Point3 v3, Point2 uv3,
+                                                Texture texture)
+        {
+            int minX = (int)Math.Max(0, Math.Floor(Math.Min(v1.X, Math.Min(v2.X, v3.X))));
+            int maxX = (int)Math.Min(fb.Width - 1, Math.Ceiling(Math.Max(v1.X, Math.Max(v2.X, v3.X))));
+            int minY = (int)Math.Max(0, Math.Floor(Math.Min(v1.Y, Math.Min(v2.Y, v3.Y))));
+            int maxY = (int)Math.Min(fb.Height - 1, Math.Ceiling(Math.Max(v1.Y, Math.Max(v2.Y, v3.Y))));
+
+            float area = EdgeFunction(v1, v2, v3);
+            if (area == 0) return;
+
+            for (int x = minX; x <= maxX; x++)
+            {
+                for (int y = minY; y <= maxY; y++)
+                {
+                    var p = new Point3(x + 0.5f, y + 0.5f, 0);
+                    float w0 = EdgeFunction(v2, v3, p);
+                    float w1 = EdgeFunction(v3, v1, p);
+                    float w2 = EdgeFunction(v1, v2, p);
+
+                    if ((w0 >= 0 && w1 >= 0 && w2 >= 0) || (w0 <= 0 && w1 <= 0 && w2 <= 0))
+                    {
+                        w0 /= area; w1 /= area; w2 /= area;
+
+                        float z = w0 * v1.Z + w1 * v2.Z + w2 * v3.Z;
+
+                        // ИНТЕРПОЛЯЦИЯ ТЕКСТУРНЫХ КООРДИНАТ
+                        float u = w0 * uv1.X + w1 * uv2.X + w2 * uv3.X;
+                        float v = w0 * uv1.Y + w1 * uv2.Y + w2 * uv3.Y;
+
+                        int color = texture.Sample(u, v);
+                        fb.SetPixel(x, y, z, color);
+                    }
+                }
+            }
+        }
         private static float EdgeFunction(Point3 a, Point3 b, Point3 c)
         {
             return (c.X - a.X) * (b.Y - a.Y) - (c.Y - a.Y) * (b.X - a.X);

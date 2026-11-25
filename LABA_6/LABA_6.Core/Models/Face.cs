@@ -9,14 +9,27 @@ namespace LABA_6.Core.Models
     public sealed class Face
     {
         public int[] Indices { get; }
-        public int Count => Indices.Length;
+        public int[]? TexIndices { get; }
 
+        // Конструктор для обычных граней (как было раньше)
         public Face(params int[] indices)
         {
             if (indices == null || indices.Length < 3)
                 throw new ArgumentException("Грань должна содержать минимум 3 вершины");
             Indices = (int[])indices.Clone();
+            TexIndices = null;
         }
+
+        // Конструктор для граней с текстурами
+        public Face(int[] indices, int[] texIndices)
+        {
+            if (indices == null || indices.Length < 3)
+                throw new ArgumentException("Грань должна содержать минимум 3 вершины");
+            Indices = (int[])indices.Clone();
+            TexIndices = texIndices != null ? (int[])texIndices.Clone() : null;
+        }
+
+        public int Count => Indices.Length;
 
         public Point3 Centroid(IReadOnlyList<Point3> v)
         {

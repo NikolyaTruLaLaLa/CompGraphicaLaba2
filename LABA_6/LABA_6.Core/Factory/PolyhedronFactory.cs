@@ -1,7 +1,6 @@
 ﻿using LABA_6.Core.Models;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace LABA_6.UI.Factory
 {
@@ -11,55 +10,66 @@ namespace LABA_6.UI.Factory
         {
             float s = 1f / MathF.Sqrt(3f);
             var v = new List<Point3>
-        {
-            new( s,  s,  s),
-            new( s, -s, -s),
-            new(-s,  s, -s),
-            new(-s, -s,  s),
-        };
+            {
+                new( s,  s,  s),
+                new( s, -s, -s),
+                new(-s,  s, -s),
+                new(-s, -s,  s),
+            };
             var f = new List<Face>
-        {
-            new(0, 1, 2), new(0, 3, 1), new(0, 2, 3), new(1, 3, 2),
-        };
+            {
+                new(0, 1, 2), new(0, 3, 1), new(0, 2, 3), new(1, 3, 2),
+            };
             return new Mesh(v, f);
         }
 
         public static Mesh CreateCube()
         {
-            float s = 1f / MathF.Sqrt(3f); 
+            float s = 1f / MathF.Sqrt(3f);
             var v = new List<Point3>
-        {
-            new(-s, -s, -s), new( s, -s, -s), new( s,  s, -s), new(-s,  s, -s),
-            new(-s, -s,  s), new( s, -s,  s), new( s,  s,  s), new(-s,  s,  s),
-        };
+            {
+                new(-s, -s, -s), new( s, -s, -s), new( s,  s, -s), new(-s,  s, -s),
+                new(-s, -s,  s), new( s, -s,  s), new( s,  s,  s), new(-s,  s,  s),
+            };
+
+            var texCoords = new List<Point2>
+            {
+                new Point2(0, 0), new Point2(1, 0),
+                new Point2(1, 1), new Point2(0, 1)
+            };
+
+            int[] ti = { 0, 1, 2, 3 };
+
             var f = new List<Face>
-        {
-            new(0, 3, 2, 1), // z = -1
-            new(4, 5, 6, 7), // z = +1
-            new(0, 4, 7, 3), // x = -1
-            new(1, 2, 6, 5), // x = +1
-            new(0, 1, 5, 4), // y = -1
-            new(3, 7, 6, 2), // y = +1
-        };
-            return new Mesh(v, f);
+            {
+                new Face(new[] {0, 3, 2, 1}, ti),
+                new Face(new[] {4, 5, 6, 7}, ti),
+                new Face(new[] {0, 4, 7, 3}, ti),
+                new Face(new[] {1, 2, 6, 5}, ti),
+                new Face(new[] {0, 1, 5, 4}, ti),
+                new Face(new[] {3, 7, 6, 2}, ti),
+            };
+
+            var mesh = new Mesh(v, f);
+            mesh.TexCoords.AddRange(texCoords);
+            return mesh;
         }
 
         public static Mesh CreateOctahedron()
         {
             var v = new List<Point3>
-        {
-            new( 1, 0, 0), new(-1, 0, 0),
-            new( 0, 1, 0), new( 0,-1, 0),
-            new( 0, 0, 1), new( 0, 0,-1),
-        };
+            {
+                new( 1, 0, 0), new(-1, 0, 0),
+                new( 0, 1, 0), new( 0,-1, 0),
+                new( 0, 0, 1), new( 0, 0,-1),
+            };
             var f = new List<Face>
-        {
-            new(0, 2, 4), new(2, 1, 4), new(1, 3, 4), new(3, 0, 4),
-            new(2, 0, 5), new(1, 2, 5), new(3, 1, 5), new(0, 3, 5),
-        };
+            {
+                new(0, 2, 4), new(2, 1, 4), new(1, 3, 4), new(3, 0, 4),
+                new(2, 0, 5), new(1, 2, 5), new(3, 1, 5), new(0, 3, 5),
+            };
             return new Mesh(v, f);
         }
-
 
         public static Mesh CreateIcosahedron()
         {
@@ -67,20 +77,20 @@ namespace LABA_6.UI.Factory
             float k = 1f / MathF.Sqrt(1f + phi * phi);
 
             var v = new List<Point3>
-        {
-            new(-1,  phi, 0), new( 1,  phi, 0), new(-1, -phi, 0), new( 1, -phi, 0),
-            new( 0, -1,  phi), new( 0,  1,  phi), new( 0, -1, -phi), new( 0,  1, -phi),
-            new( phi, 0, -1), new( phi, 0,  1), new(-phi, 0, -1), new(-phi, 0,  1),
-        };
+            {
+                new(-1,  phi, 0), new( 1,  phi, 0), new(-1, -phi, 0), new( 1, -phi, 0),
+                new( 0, -1,  phi), new( 0,  1,  phi), new( 0, -1, -phi), new( 0,  1, -phi),
+                new( phi, 0, -1), new( phi, 0,  1), new(-phi, 0, -1), new(-phi, 0,  1),
+            };
             for (int i = 0; i < v.Count; i++) v[i] = v[i] * k;
 
             var f = new List<Face>
-        {
-            new(0,11,5), new(0,5,1),  new(0,1,7),  new(0,7,10), new(0,10,11),
-            new(1,5,9),  new(5,11,4), new(11,10,2),new(10,7,6), new(7,1,8),
-            new(3,9,4),  new(3,4,2),  new(3,2,6),  new(3,6,8),  new(3,8,9),
-            new(4,9,5),  new(2,4,11), new(6,2,10), new(8,6,7),  new(9,8,1),
-        };
+            {
+                new(0,11,5), new(0,5,1),  new(0,1,7),  new(0,7,10), new(0,10,11),
+                new(1,5,9),  new(5,11,4), new(11,10,2),new(10,7,6), new(7,1,8),
+                new(3,9,4),  new(3,4,2),  new(3,2,6),  new(3,6,8),  new(3,8,9),
+                new(4,9,5),  new(2,4,11), new(6,2,10), new(8,6,7),  new(9,8,1),
+            };
             return new Mesh(v, f);
         }
 
@@ -93,7 +103,7 @@ namespace LABA_6.UI.Factory
             {
                 new( k,  k,  k), new( k,  k, -k), new( k, -k,  k), new( k, -k, -k),
                 new(-k,  k,  k), new(-k,  k, -k), new(-k, -k,  k), new(-k, -k, -k),
-                
+
                 new(0,  k / phi,  k * phi), new(0,  k / phi, -k * phi),
                 new(0, -k / phi,  k * phi), new(0, -k / phi, -k * phi),
 

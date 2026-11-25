@@ -9,6 +9,7 @@ namespace LABA_6.Core.Models
     {
         public List<Point3> Vertices { get; }
         public List<Face> Faces { get; }
+        public List<Point2> TexCoords { get; } = new();
 
         public Mesh() { Vertices = new(); Faces = new(); }
         public Mesh(IEnumerable<Point3> vertices, IEnumerable<Face> faces)
@@ -42,7 +43,13 @@ namespace LABA_6.Core.Models
         {
             var copy = new Mesh();
             copy.Vertices.AddRange(Vertices);
-            foreach (var f in Faces) copy.Faces.Add(new Face(f.Indices));
+            copy.TexCoords.AddRange(TexCoords); // Копируем текстурные координаты
+
+            foreach (var f in Faces)
+            {
+                // Передаем и индексы вершин, и индексы текстуры
+                copy.Faces.Add(new Face(f.Indices, f.TexIndices!));
+            }
             return copy;
         }
 

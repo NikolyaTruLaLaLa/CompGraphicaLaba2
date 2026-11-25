@@ -25,7 +25,6 @@ namespace LABA_6.UI
         {
             if (OverlapCheckBox.IsChecked == true)
             {
-                // Генерируем сферу через RevolutionFactory
                 var profile = new System.Collections.Generic.List<Point3>();
                 int segments = 16;
                 for (int i = 0; i <= segments; i++)
@@ -35,7 +34,6 @@ namespace LABA_6.UI
                 }
                 _mesh2 = LABA_6.Core.Factory.RevolutionFactory.Create(profile, 24, LABA_6.Core.Factory.TransformFactory.CoordinateAxis.Y);
 
-                // Смещаем сферу, чтобы она пересекалась с объектом в центре
                 _modelMatrix2 = Matrix4x4.Translation(0.8f, 0.8f, 0f);
             }
             else
@@ -67,7 +65,6 @@ namespace LABA_6.UI
 
                 Point3 customViewDir = new Point3(GetFloat(ViewXBox, 0f), GetFloat(ViewYBox, 0f), GetFloat(ViewZBox, -1f)).Normalized();
 
-                // Формируем сцену
                 var sceneObjects = new System.Collections.Generic.List<SceneObject>
                 {
                     new SceneObject(_mesh, _modelMatrix, Rasterizer.ColorCyan)
@@ -75,11 +72,10 @@ namespace LABA_6.UI
 
                 if (_mesh2 != null)
                 {
-                    // Второй объект делаем фиолетовым (Magenta), чтобы отличать
                     sceneObjects.Add(new SceneObject(_mesh2, _modelMatrix2, unchecked((int)0xFFFF00FF)));
                 }
 
-                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling, customViewDir, showNormals, out int renderedFaces);
+                SoftwareRenderer.Render(_frameBuffer, sceneObjects, _camera, isPerspective, doCulling, customViewDir, showNormals, _testTexture, out int renderedFaces);
 
                 _bitmap.Lock();
                 Marshal.Copy(_frameBuffer.Color, 0, _bitmap.BackBuffer, _frameBuffer.Color.Length);
